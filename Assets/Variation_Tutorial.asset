@@ -32,5 +32,5 @@ MonoBehaviour:
     Scale: {x: 0, y: 0, z: 0}
     Type: 0
   Multipliers: []
-  GoalPosition: {x: 0, y: -5, z: 0}
+  GoalPosition: {x: 3, y: -5, z: 0}
   GoalSize: {x: 2, y: 1, z: 0.5}

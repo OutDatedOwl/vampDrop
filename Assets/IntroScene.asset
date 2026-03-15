@@ -29,30 +29,30 @@ MonoBehaviour:
       scale: 1
       animation: 12
       appearDelay: 0
-      animationDuration: 0
+      animationDuration: 4
       panDistance: 0
       zoomScale: 0
     - elementName: Year
-      sprite: {fileID: 21300000, guid: e1f35ea6c697c184cb59531007a002f0, type: 3}
+      sprite: {fileID: 21300000, guid: 7d1a89293bd09e24dae11a1daec1a176, type: 3}
       layer: 2
       sizeMode: 1
       customSize: {x: 500, y: 500}
       position: {x: 0.8, y: 0.9}
       scale: 1
       animation: 1
-      appearDelay: 2
+      appearDelay: 5
       animationDuration: 1
       panDistance: 0
       zoomScale: 0
     - elementName: Time
-      sprite: {fileID: 21300000, guid: 975fa3be06c56d64194c2545ce5817f1, type: 3}
+      sprite: {fileID: 21300000, guid: ef0b9d26847a548468114ee5658f1622, type: 3}
       layer: 2
       sizeMode: 1
       customSize: {x: 500, y: 500}
       position: {x: 0.8, y: 0.7}
       scale: 0.8
       animation: 1
-      appearDelay: 4
+      appearDelay: 6
       animationDuration: 1
       panDistance: 0
       zoomScale: 0
@@ -77,7 +77,7 @@ MonoBehaviour:
       panDistance: 0
       zoomScale: 0
     - elementName: lost_text
-      sprite: {fileID: 21300000, guid: 60e266c40c248f346bb0050ceb788e87, type: 3}
+      sprite: {fileID: 21300000, guid: e8eeec26b2640264c8b9fbfc769cd2f5, type: 3}
       layer: 2
       sizeMode: 1
       customSize: {x: 500, y: 500}
@@ -145,27 +145,15 @@ MonoBehaviour:
     musicVolume: 0
   - panelName: Trap
     widthMode: 1
-    customWidth: 700
+    customWidth: 600
     autoDuration: 0
     elements:
     - elementName: speaker
-      sprite: {fileID: 21300000, guid: 108770da23685244d988e30146efe58a, type: 3}
+      sprite: {fileID: 21300000, guid: fb336290f6ad1d34b80e33aa994aebe1, type: 3}
       layer: 0
-      sizeMode: 2
-      customSize: {x: 1080, y: 1080}
-      position: {x: 0, y: 1}
-      scale: 1
-      animation: 0
-      appearDelay: 0
-      animationDuration: 0
-      panDistance: 0
-      zoomScale: 0
-    - elementName: rice
-      sprite: {fileID: 21300000, guid: b096e239dd25bdf4baeeb7696b181250, type: 3}
-      layer: 0
-      sizeMode: 2
-      customSize: {x: 1080, y: 1080}
-      position: {x: 0, y: 0.5}
+      sizeMode: 0
+      customSize: {x: 0, y: 0}
+      position: {x: 0, y: 0}
       scale: 1
       animation: 0
       appearDelay: 0

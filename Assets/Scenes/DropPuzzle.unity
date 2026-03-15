@@ -1005,40 +1005,15 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 721832737}
-  - component: {fileID: 721832736}
+  - component: {fileID: 721832738}
+  - component: {fileID: 721832739}
   m_Layer: 0
-  m_Name: GridPuzzleLoader
+  m_Name: PuzzlePrefabLoader
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &721832736
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 721832735}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ddc97b51b5d85548acc27cdd7bddc22, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Vampire.DropPuzzle.GridPuzzleLoader
-  PuzzleJsonFile: {fileID: 4900000, guid: 38c35f2103ac94d4daf02dafff0a0898, type: 3}
-  StartY: 8
-  CellHeight: 1
-  WallHeight: 1
-  WallWidth: 0.75
-  WallPrefab: {fileID: 3726684040606726451, guid: 882ee9ad1f31450488494a7df822ec18, type: 3}
-  RiceBallPrefab: {fileID: 5991133914556099428, guid: 41ed7c4c4e09a8e498c31a6a3a8ff631, type: 3}
-  WallMaterial: {fileID: 2100000, guid: 4b752657ca4e5cb46a04df9bcf952f25, type: 2}
-  DropZoneColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  BackgroundPrefab: {fileID: 0}
-  BackgroundMaterial: {fileID: 2100000, guid: e03cc0b8237b69242920bcd44f3a7cf3, type: 2}
-  BackgroundColor: {r: 0.1, g: 0.1, b: 0.15, a: 1}
-  BackgroundPosition: {x: -2, y: 1, z: 50}
-  BackgroundScale: {x: 50, y: 50, z: 1}
 --- !u!4 &721832737
 Transform:
   m_ObjectHideFlags: 0
@@ -1048,12 +1023,59 @@ Transform:
   m_GameObject: {fileID: 721832735}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.07896, y: -0, z: 10.03633}
+  m_LocalPosition: {x: -2, y: 0, z: 10.03633}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &721832738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721832735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33bb4593ac96fc747949a66b8d74196d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Vampire.DropPuzzle.PuzzlePrefabLoader
+  PuzzlePrefabs:
+  - {fileID: 1612335730034298393, guid: da0e7472d7a7fbb45ad1d87214f7b832, type: 3}
+  - {fileID: 695581116435187846, guid: c937648fee5d4184eaa4549bc383d836, type: 3}
+  PuzzlePositionOffset: {x: 0, y: 10, z: -22.5}
+  PuzzleRotation: {x: 0, y: 0, z: 0}
+  PuzzleScale: {x: 1, y: 1, z: 1}
+  UsePlayerLevel: 1
+  ManualPuzzleIndex: 0
+  BackgroundPrefab: {fileID: 0}
+  BackgroundSprite: {fileID: 0}
+  BackgroundPosition: {x: -2, y: 1, z: -50}
+  BackgroundScale: {x: 50, y: 50, z: 1}
+  EnableDynamicEnhancement: 1
+--- !u!114 &721832739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721832735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5438af792d956a44e93c7025e96123a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Vampire.DropPuzzle.PuzzleEnhancer
+  UseUserStats: 1
+  UseTestStats: 0
+  TestRiceCollected: 5000
+  TestHelperCount: 5
+  Multiplier2xPrefab: {fileID: 4446269053292882638, guid: 93218a7ebbfeeb243864f1a42acbd910, type: 3}
+  Multiplier3xPrefab: {fileID: 0}
+  BonusZonePrefab: {fileID: 0}
+  RiceFor2xZones: 1000
+  RiceFor3xZones: 5000
+  HelpersForBonusZones: 3
 --- !u!1 &766885287
 GameObject:
   m_ObjectHideFlags: 0
@@ -2584,74 +2606,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2122943845}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &2129359770
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2129359773}
-  - component: {fileID: 2129359772}
-  - component: {fileID: 2129359771}
-  m_Layer: 0
-  m_Name: GoalGate
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2129359771
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2129359770}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 673ce19c5e32eaf4db1d3c152c2ccd94, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Vampire.DropPuzzle.GoalGate
-  RiceBallTag: RiceBall
-  GateColor: {r: 0, g: 1, b: 0, a: 1}
---- !u!65 &2129359772
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2129359770}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &2129359773
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2129359770}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -5, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -2663,7 +2617,6 @@ SceneRoots:
   - {fileID: 552861623}
   - {fileID: 2013669722}
   - {fileID: 875005782}
-  - {fileID: 2129359773}
   - {fileID: 721832737}
   - {fileID: 766885289}
   - {fileID: 2045177153}

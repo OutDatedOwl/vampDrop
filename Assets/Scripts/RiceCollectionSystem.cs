@@ -222,13 +222,39 @@ namespace Vampire.Rice
             
             // Check player entity count
             int playerCount = playerQuery.CalculateEntityCount();
-            if (playerCount != 1)
+            if (playerCount == 0)
             {
-                UnityEngine.Debug.LogWarning($"[RiceCollectionSystem] Player count: {playerCount} (need exactly 1)");
+                // No players yet - scene still loading
+                return;
+            }
+            else if (playerCount > 1)
+            {
+                // Multiple players during scene transition - use the most recent one
+                UnityEngine.Debug.LogWarning($"[RiceCollectionSystem] Player count: {playerCount} (using first available, duplicates will be cleaned up)");
+            }
+            
+            // Get the first available player entity
+            Entity playerEntity;
+            try
+            {
+                playerEntity = SystemAPI.GetSingletonEntity<Player.PlayerData>();
+            }
+            catch (System.InvalidOperationException)
+            {
+                // Fallback: get first player from query
+                var players = playerQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+                if (players.Length == 0) return;
+                playerEntity = players[0];
+                players.Dispose();
+            }
+            
+            // Validate player entity before use
+            if (!state.EntityManager.Exists(playerEntity))
+            {
+                UnityEngine.Debug.LogWarning("[RiceCollectionSystem] Player entity doesn't exist, skipping frame");
                 return;
             }
             
-            Entity playerEntity = SystemAPI.GetSingletonEntity<Player.PlayerData>();
             var playerTransform = state.EntityManager.GetComponentData<LocalTransform>(playerEntity);
             
             // Count rice entities
@@ -276,6 +302,12 @@ namespace Vampire.Rice
             if (clickedEntity != Entity.Null)
             {
                 UnityEngine.Debug.Log($"[RiceCollectionSystem] ✅ Collecting rice entity!");
+                
+                // Play rice pickup audio
+                if (Vampire.Player.FPSAudioManager.Instance != null)
+                {
+                    Vampire.Player.FPSAudioManager.Instance.PlayRicePickupSound();
+                }
                 
                 // Destroy entity (safe to do outside the job)
                 state.EntityManager.DestroyEntity(clickedEntity);

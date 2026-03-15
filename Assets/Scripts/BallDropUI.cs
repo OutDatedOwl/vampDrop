@@ -62,8 +62,12 @@ namespace Vampire.DropPuzzle
             completionManager = FindObjectOfType<BallDropCompletionManager>();
             if (completionManager != null)
             {
+                // IMPORTANT: Reset completion state at scene start
+                completionManager.isComplete = false;
+                completionManager.isDropActive = false;
+                
                 completionManager.OnDropComplete += ShowCompletionUI;
-                Debug.Log("[BallDropUI] Subscribed to OnDropComplete event");
+                Debug.Log("[BallDropUI] Subscribed to OnDropComplete event and reset completion state");
             }
             else
             {

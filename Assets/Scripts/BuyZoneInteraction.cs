@@ -133,14 +133,15 @@ namespace Vampire.DropPuzzle
         private void DrawShopUI()
         {
             var playerData = PlayerDataManager.Instance;
+            var shop = UpgradeShop.Instance;
             if (playerData == null) return;
             
             // Semi-transparent background
             GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "", new GUIStyle { normal = { background = MakeTexture(2, 2, new Color(0, 0, 0, 0.8f)) } });
             
-            // Shop window
-            float windowWidth = 600;
-            float windowHeight = 500;
+            // Shop window (taller for more upgrades)
+            float windowWidth = 700;
+            float windowHeight = 700;
             float windowX = (Screen.width - windowWidth) / 2f;
             float windowY = (Screen.height - windowHeight) / 2f;
             
@@ -158,7 +159,7 @@ namespace Vampire.DropPuzzle
             titleStyle.alignment = TextAnchor.MiddleCenter;
             titleStyle.normal.textColor = Color.yellow;
             
-            GUI.Label(new Rect(windowX, windowY + 20, windowWidth, 50), "Flink's Shop", titleStyle);
+            GUI.Label(new Rect(windowX, windowY + 20, windowWidth, 50), "Flink's Shop - FPS Upgrades", titleStyle);
             
             // Currency display
             GUIStyle currencyStyle = new GUIStyle(GUI.skin.label);
@@ -169,53 +170,117 @@ namespace Vampire.DropPuzzle
             GUI.Label(new Rect(windowX, windowY + 70, windowWidth, 40), 
                 $"Your Currency: ${playerData.TotalCurrency * 0.01f:F2}", currencyStyle);
             
-            // Upgrade section
-            float upgradeY = windowY + 130;
-            
+            // Styles
             GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.fontSize = 20;
+            labelStyle.fontSize = 18;
             labelStyle.normal.textColor = Color.white;
             
+            GUIStyle smallLabelStyle = new GUIStyle(GUI.skin.label);
+            smallLabelStyle.fontSize = 16;
+            smallLabelStyle.normal.textColor = new Color(0.8f, 0.8f, 0.8f);
+            
             GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
-            buttonStyle.fontSize = 18;
+            buttonStyle.fontSize = 16;
             buttonStyle.normal.textColor = Color.white;
             buttonStyle.fontStyle = FontStyle.Bold;
             
-            // Collection Range Upgrade
-            float currentRange = playerData.FPSCollector.pickupRadius;
-            float nextRange = GetNextRangeUpgrade(currentRange);
-            int upgradeCost = GetRangeUpgradeCost(currentRange);
+            float yPos = windowY + 130;
+            float leftMargin = windowX + 30;
+            float rightMargin = windowWidth - 60;
             
-            GUI.Label(new Rect(windowX + 30, upgradeY, windowWidth - 60, 30), 
-                "━━━ Collection Range ━━━", labelStyle);
+            // ━━━ Pickup Radius ━━━
+            GUI.Label(new Rect(leftMargin, yPos, rightMargin, 30), 
+                $"━━━ Pickup Radius: {playerData.FPSCollector.pickupRadius:F2} (Max: 5.0) ━━━", labelStyle);
+            yPos += 35;
             
-            GUI.Label(new Rect(windowX + 30, upgradeY + 40, windowWidth - 60, 30), 
-                $"Current Range: {currentRange:F1} feet", labelStyle);
-            
-            if (nextRange > currentRange)
+            if (DrawUpgradeButton(leftMargin, ref yPos, rightMargin, buttonStyle, smallLabelStyle, playerData,
+                playerData.FPSCollector.pickupRadius < 5.0f,
+                () => shop != null && shop.BuyPickupRadiusUpgrade(),
+                "Pickup Radius +0.25",
+                GetPickupRadiusCost(playerData.FPSCollector.pickupRadius)))
             {
-                GUI.Label(new Rect(windowX + 30, upgradeY + 75, windowWidth - 60, 30), 
-                    $"Next Upgrade: {nextRange:F1} feet", labelStyle);
-                
-                GUI.Label(new Rect(windowX + 30, upgradeY + 110, windowWidth - 60, 30), 
-                    $"Cost: ${upgradeCost * 0.01f:F2}", 
-                    playerData.TotalCurrency >= upgradeCost ? labelStyle : new GUIStyle(labelStyle) { normal = { textColor = Color.red } });
-                
-                bool canAfford = playerData.TotalCurrency >= upgradeCost;
-                GUI.enabled = canAfford;
-                
-                if (GUI.Button(new Rect(windowX + 200, upgradeY + 150, 200, 50), 
-                    canAfford ? "Purchase Upgrade" : "Not Enough $$$", buttonStyle))
+                // Purchase succeeded
+            }
+            
+            yPos += 10;
+            
+            // ━━━ Multi-Pickup ━━━
+            int maxPickups = playerData.FPSCollector.maxSimultaneousPickups;
+            GUI.Label(new Rect(leftMargin, yPos, rightMargin, 30), 
+                $"━━━ Multi-Pickup: {maxPickups} rice(s) (Max: 5) ━━━", labelStyle);
+            yPos += 35;
+            
+            if (maxPickups == 1)
+            {
+                if (DrawUpgradeButton(leftMargin, ref yPos, rightMargin, buttonStyle, smallLabelStyle, playerData,
+                    true,
+                    () => shop != null && shop.UnlockMultiPickup(),
+                    "🔓 Unlock Multi-Pickup (2 rices)",
+                    400))
                 {
-                    PurchaseRangeUpgrade();
+                    // Purchase succeeded
                 }
-                
-                GUI.enabled = true;
+            }
+            else if (maxPickups < 5)
+            {
+                if (DrawUpgradeButton(leftMargin, ref yPos, rightMargin, buttonStyle, smallLabelStyle, playerData,
+                    true,
+                    () => shop != null && shop.BuyMultiPickupUpgrade(),
+                    $"Multi-Pickup +1 ({maxPickups} → {maxPickups + 1})",
+                    GetMultiPickupCost(maxPickups)))
+                {
+                    // Purchase succeeded
+                }
             }
             else
             {
-                GUI.Label(new Rect(windowX + 30, upgradeY + 75, windowWidth - 60, 30), 
-                    "MAX LEVEL ACHIEVED!", new GUIStyle(labelStyle) { normal = { textColor = Color.cyan } });
+                GUI.Label(new Rect(leftMargin, yPos, rightMargin, 25), 
+                    "✅ MAXED OUT", new GUIStyle(smallLabelStyle) { normal = { textColor = Color.cyan } });
+                yPos += 30;
+            }
+            
+            yPos += 10;
+            
+            // ━━━ Magnetic Pull ━━━
+            bool magneticEnabled = playerData.FPSCollector.magneticPullEnabled;
+            GUI.Label(new Rect(leftMargin, yPos, rightMargin, 30), 
+                $"━━━ Magnetic Pull: {(magneticEnabled ? "ON" : "OFF")} ━━━", labelStyle);
+            yPos += 35;
+            
+            if (!magneticEnabled)
+            {
+                if (DrawUpgradeButton(leftMargin, ref yPos, rightMargin, buttonStyle, smallLabelStyle, playerData,
+                    true,
+                    () => shop != null && shop.UnlockMagneticPull(),
+                    "🔓 Unlock Magnetic Pull (rice flies to you!)",
+                    800))
+                {
+                    // Purchase succeeded
+                }
+            }
+            else
+            {
+                GUI.Label(new Rect(leftMargin, yPos, rightMargin, 25), 
+                    $"✅ UNLOCKED - Radius: {playerData.FPSCollector.magneticPullRadius:F1}", 
+                    new GUIStyle(smallLabelStyle) { normal = { textColor = Color.cyan } });
+                yPos += 30;
+            }
+            
+            yPos += 10;
+            
+            // ━━━ Move Speed ━━━
+            float speedMult = playerData.FPSCollector.moveSpeedMultiplier;
+            GUI.Label(new Rect(leftMargin, yPos, rightMargin, 30), 
+                $"━━━ Move Speed: {speedMult:F1}x (Max: 2.0x) ━━━", labelStyle);
+            yPos += 35;
+            
+            if (DrawUpgradeButton(leftMargin, ref yPos, rightMargin, buttonStyle, smallLabelStyle, playerData,
+                speedMult < 2.0f,
+                () => shop != null && shop.BuyMoveSpeedUpgrade(),
+                $"Move Speed +10% ({speedMult:F1}x → {speedMult + 0.1f:F1}x)",
+                GetMoveSpeedCost(speedMult)))
+            {
+                // Purchase succeeded
             }
             
             // Close button
@@ -226,44 +291,59 @@ namespace Vampire.DropPuzzle
             }
         }
         
-        private float GetNextRangeUpgrade(float currentRange)
+        /// <summary>
+        /// Helper to draw an upgrade button. Returns true if purchase succeeded.
+        /// </summary>
+        private bool DrawUpgradeButton(float x, ref float y, float maxWidth, GUIStyle buttonStyle, GUIStyle labelStyle, 
+            PlayerDataManager playerData, bool isAvailable, System.Func<bool> purchaseFunc, string upgradeText, int costCents)
         {
-            // Upgrade path: 1.5 -> 2.5 -> 4.0 -> 6.0 -> 10.0
-            if (currentRange < 2.5f) return 2.5f;
-            if (currentRange < 4.0f) return 4.0f;
-            if (currentRange < 6.0f) return 6.0f;
-            if (currentRange < 10.0f) return 10.0f;
-            return currentRange; // Max level
+            if (!isAvailable)
+            {
+                GUI.Label(new Rect(x, y, maxWidth, 25), 
+                    "✅ MAXED OUT", new GUIStyle(labelStyle) { normal = { textColor = Color.cyan } });
+                y += 30;
+                return false;
+            }
+            
+            bool canAfford = playerData.TotalCurrency >= costCents;
+            
+            // Show cost
+            GUI.Label(new Rect(x, y, maxWidth, 25), 
+                $"{upgradeText} — ${costCents * 0.01f:F2}", 
+                canAfford ? labelStyle : new GUIStyle(labelStyle) { normal = { textColor = Color.red } });
+            y += 30;
+            
+            // Purchase button
+            GUI.enabled = canAfford;
+            if (GUI.Button(new Rect(x + 150, y, 200, 40), 
+                canAfford ? "Purchase" : "Not Enough $$$", buttonStyle))
+            {
+                bool success = purchaseFunc();
+                GUI.enabled = true;
+                y += 50;
+                return success;
+            }
+            GUI.enabled = true;
+            y += 50;
+            return false;
         }
         
-        private int GetRangeUpgradeCost(float currentRange)
+        private int GetPickupRadiusCost(float currentRadius)
         {
-            // Costs in cents: 1.5->2.5 = $0.50, 2.5->4.0 = $1.00, 4.0->6.0 = $2.00, 6.0->10.0 = $5.00
-            if (currentRange < 2.5f) return 50;   // $0.50
-            if (currentRange < 4.0f) return 100;  // $1.00
-            if (currentRange < 6.0f) return 200;  // $2.00
-            if (currentRange < 10.0f) return 500; // $5.00
-            return 0; // Max level
+            int currentLevel = (int)((currentRadius - 1.5f) / 0.25f);
+            return 100 + (currentLevel * 50);
         }
         
-        private void PurchaseRangeUpgrade()
+        private int GetMultiPickupCost(int currentPickups)
         {
-            var playerData = PlayerDataManager.Instance;
-            if (playerData == null) return;
-            
-            float currentRange = playerData.FPSCollector.pickupRadius;
-            float nextRange = GetNextRangeUpgrade(currentRange);
-            int cost = GetRangeUpgradeCost(currentRange);
-            
-            if (playerData.SpendCurrency(cost, $"Collection Range Upgrade ({currentRange:F1} -> {nextRange:F1})"))
-            {
-                playerData.FPSCollector.pickupRadius = nextRange;
-                Debug.Log($"[BuyZone] ✅ Upgraded collection range to {nextRange:F1} feet!");
-            }
-            else
-            {
-                Debug.LogWarning("[BuyZone] ❌ Not enough currency for upgrade!");
-            }
+            int currentLevel = currentPickups - 2;
+            return 300 + (currentLevel * 150);
+        }
+        
+        private int GetMoveSpeedCost(float currentSpeed)
+        {
+            int currentLevel = (int)((currentSpeed - 1.0f) * 10);
+            return 150 + (currentLevel * 75);
         }
         
         /// <summary>

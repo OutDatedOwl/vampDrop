@@ -4,15 +4,15 @@
   "columns": 7,
   "cellSize": 2.5,
   "grid": [
-    "empty", "dz", "dz", "dz", "dz", "dz", "empty",
+    "wall", "dz", "dz", "dz", "dz", "dz", "wall",
     "empty", "wall\\", "empty", "empty", "empty", "wall/", "empty",
-    "empty", "empty", "empty", "empty", "empty", "empty", "empty",
+    "empty", "wall", "empty", "empty", "empty", "wall", "empty",
     "empty", "empty", "wall\\", "empty", "wall/", "empty", "empty",
+    "empty", "empty", "wall", "empty", "wall", "empty", "empty",
+    "empty", "empty", "wall", "empty", "wall", "empty", "empty",
+    "empty", "empty", "wall", "empty", "wall", "empty", "empty",
+    "empty", "empty", "wall", "empty", "wall", "empty", "empty",
     "empty", "empty", "empty", "empty", "empty", "empty", "empty",
-    "empty", "wall\\", "empty", "empty", "empty", "wall/", "empty",
-    "empty", "empty", "empty", "empty", "empty", "empty", "empty",
-    "empty", "empty", "wall\\", "empty", "wall/", "empty", "empty",
-    "empty", "empty", "empty", "empty", "empty", "empty", "empty",
-    "wall", "empty", "empty", "goal", "empty", "empty", "wall"
+    "goal", "goal", "goal", "goal", "goal", "goal", "goal"
   ]
 }

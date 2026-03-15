@@ -42,6 +42,12 @@ ignore.conf
 # Visual Studio cache directory
 .vs/
 
+# VS Code settings and extensions
+.vscode/
+
+# Claude AI assistant files
+.claude/
+
 # Gradle cache directory
 .gradle/
 

@@ -374,13 +374,27 @@ namespace Vampire
         /// </summary>
         private void StartPanelAnimations(ComicPanel panel)
         {
+            // Clear previous elements
+            activeElements.Clear();
+            
+            // Add all elements from this panel to active elements
             foreach (var element in panel.elements)
             {
+                activeElements.Add(element);
+                
                 if (element.animation != PanelAnimation.None)
                 {
                     SetupElementAnimation(element);
                 }
+                else
+                {
+                    // Elements with no animation are immediately ready
+                    element.isAnimating = false;
+                    Debug.Log($"[ComicScene] Element '{element.elementName}' has no animation - immediately ready");
+                }
             }
+            
+            Debug.Log($"[ComicScene] Started animations for {panel.elements.Count} elements in panel '{panel.panelName}' ({activeElements.Count} active)");
         }
         
         /// <summary>
@@ -398,8 +412,17 @@ namespace Vampire
                 if (element.isAnimating)
                 {
                     UpdateElementAnimation(element);
-                    anyAnimating = true;
+                    if (element.isAnimating) // Check again after update
+                    {
+                        anyAnimating = true;
+                    }
                 }
+            }
+            
+            // Debug: Log animation status occasionally
+            if (Time.frameCount % 60 == 0) // Every second
+            {
+                Debug.Log($"[ComicScene] Panel {currentPanelIndex}: anyAnimating={anyAnimating}, waitingForInput={waitingForInput}, panelTime={panelTime:F1}s, autoDuration={panel.autoDuration}");
             }
             
             // Check if we should wait for input or auto-advance
@@ -420,8 +443,63 @@ namespace Vampire
                     if (continuePrompt != null && showContinuePrompt)
                     {
                         continuePrompt.gameObject.SetActive(true);
-                        Debug.Log($"[ComicScene] [{activeSequence?.sequenceId}] Panel {currentPanelIndex} waiting for input (Enter to continue)");
+                        Debug.Log($"[ComicScene] [{activeSequence?.sequenceId}] Panel {currentPanelIndex} '{panel.panelName}' waiting for input - CONTINUE PROMPT SHOWN");
                     }
+                    else
+                    {
+                        Debug.LogWarning($"[ComicScene] Continue prompt not shown! continuePrompt={continuePrompt != null}, showContinuePrompt={showContinuePrompt}");
+                    }
+                }
+            }
+            
+            // Fallback: Force show continue prompt after reasonable time if autoDuration = 0
+            if (panel.autoDuration == 0f && panelTime > 2f && !waitingForInput)
+            {
+                int stuckAnimationCount = 0;
+                foreach (var element in activeElements)
+                {
+                    if (element.isAnimating) stuckAnimationCount++;
+                }
+                
+                Debug.LogWarning($"[ComicScene] Forcing continue prompt after 2s - animations might be stuck. Completing {stuckAnimationCount} stuck animations");
+                
+                // Force complete all stuck animations properly
+                foreach (var element in activeElements)
+                {
+                    if (element.isAnimating)
+                    {
+                        Debug.LogWarning($"[ComicScene] Force completing stuck animation: {element.elementName} ({element.animation})");
+                        element.isAnimating = false;
+                        
+                        // Set elements to their final animation state
+                        if (element.imageComponent != null && element.animation == PanelAnimation.FadeIn)
+                        {
+                            var color = element.imageComponent.color;
+                            color.a = 1f; // Full opacity
+                            element.imageComponent.color = color;
+                        }
+                        
+                        if (element.rectTransform != null)
+                        {
+                            element.rectTransform.anchoredPosition = element.animationEndPos;
+                            element.rectTransform.localScale = Vector3.one * element.animationEndScale;
+                        }
+                        
+                        // Clean up curtain animation objects
+                        if (element.animation == PanelAnimation.CurtainOpen)
+                        {
+                            if (element.curtainLeft != null) Destroy(element.curtainLeft);
+                            if (element.curtainRight != null) Destroy(element.curtainRight);
+                            element.curtainLeft = null;
+                            element.curtainRight = null;
+                        }
+                    }
+                }
+                
+                waitingForInput = true;
+                if (continuePrompt != null && showContinuePrompt)
+                {
+                    continuePrompt.gameObject.SetActive(true);
                 }
             }
         }
@@ -618,41 +696,41 @@ namespace Vampire
         }
         
         /// <summary>
-        /// Create black curtain bars for reveal effect
+        /// Create black curtain bars for vertical reveal effect (top and bottom)
         /// </summary>
         private void CreateCurtainBars(ComicElement element, RectTransform canvasRT)
         {
-            // Left curtain bar
-            element.curtainLeft = new GameObject("CurtainLeft");
+            // Top curtain bar (starts covering top half)
+            element.curtainLeft = new GameObject("CurtainTop");
             element.curtainLeft.transform.SetParent(element.gameObject.transform.parent, false);
-            RectTransform leftRT = element.curtainLeft.AddComponent<RectTransform>();
-            leftRT.anchorMin = Vector2.zero;
-            leftRT.anchorMax = Vector2.one;
-            leftRT.sizeDelta = Vector2.zero;
-            leftRT.anchoredPosition = Vector2.zero;
+            RectTransform topRT = element.curtainLeft.AddComponent<RectTransform>();
+            topRT.anchorMin = new Vector2(0f, 0.5f);  // Covers top half initially
+            topRT.anchorMax = new Vector2(1f, 1f);
+            topRT.sizeDelta = Vector2.zero;
+            topRT.anchoredPosition = Vector2.zero;
             
-            UnityEngine.UI.Image leftImg = element.curtainLeft.AddComponent<UnityEngine.UI.Image>();
-            leftImg.color = Color.black;
+            UnityEngine.UI.Image topImg = element.curtainLeft.AddComponent<UnityEngine.UI.Image>();
+            topImg.color = Color.black;
             
-            Canvas leftCanvas = element.curtainLeft.AddComponent<Canvas>();
-            leftCanvas.overrideSorting = true;
-            leftCanvas.sortingOrder = GetSortingOrder(element.layer) + 1; // Above the image
+            Canvas topCanvas = element.curtainLeft.AddComponent<Canvas>();
+            topCanvas.overrideSorting = true;
+            topCanvas.sortingOrder = GetSortingOrder(element.layer) + 1; // Above the image
             
-            // Right curtain bar
-            element.curtainRight = new GameObject("CurtainRight");
+            // Bottom curtain bar (starts covering bottom half)
+            element.curtainRight = new GameObject("CurtainBottom");
             element.curtainRight.transform.SetParent(element.gameObject.transform.parent, false);
-            RectTransform rightRT = element.curtainRight.AddComponent<RectTransform>();
-            rightRT.anchorMin = Vector2.zero;
-            rightRT.anchorMax = Vector2.one;
-            rightRT.sizeDelta = Vector2.zero;
-            rightRT.anchoredPosition = Vector2.zero;
+            RectTransform bottomRT = element.curtainRight.AddComponent<RectTransform>();
+            bottomRT.anchorMin = new Vector2(0f, 0f);
+            bottomRT.anchorMax = new Vector2(1f, 0.5f);  // Covers bottom half initially
+            bottomRT.sizeDelta = Vector2.zero;
+            bottomRT.anchoredPosition = Vector2.zero;
             
-            UnityEngine.UI.Image rightImg = element.curtainRight.AddComponent<UnityEngine.UI.Image>();
-            rightImg.color = Color.black;
+            UnityEngine.UI.Image bottomImg = element.curtainRight.AddComponent<UnityEngine.UI.Image>();
+            bottomImg.color = Color.black;
             
-            Canvas rightCanvas = element.curtainRight.AddComponent<Canvas>();
-            rightCanvas.overrideSorting = true;
-            rightCanvas.sortingOrder = GetSortingOrder(element.layer) + 1; // Above the image
+            Canvas bottomCanvas = element.curtainRight.AddComponent<Canvas>();
+            bottomCanvas.overrideSorting = true;
+            bottomCanvas.sortingOrder = GetSortingOrder(element.layer) + 1; // Above the image
         }
         
         /// <summary>
@@ -665,6 +743,39 @@ namespace Vampire
             // Wait for appear delay
             if (currentTime < element.animationStartTime)
             {
+                return;
+            }
+            
+            // Handle zero-duration animations (instant completion)
+            if (element.animationDuration <= 0f)
+            {
+                // Instantly set to final values
+                switch (element.animation)
+                {
+                    case PanelAnimation.FadeIn:
+                        element.imageComponent.color = element.animationEndColor;
+                        break;
+                    case PanelAnimation.PanDown:
+                    case PanelAnimation.PanUp:
+                    case PanelAnimation.PanLeft:
+                    case PanelAnimation.PanRight:
+                    case PanelAnimation.SlideInLeft:
+                    case PanelAnimation.SlideInRight:
+                    case PanelAnimation.SlideInTop:
+                    case PanelAnimation.SlideInBottom:
+                        element.rectTransform.anchoredPosition = element.animationEndPos;
+                        break;
+                    case PanelAnimation.ZoomIn:
+                    case PanelAnimation.ZoomOut:
+                        element.rectTransform.localScale = Vector3.one * element.animationEndScale;
+                        break;
+                    case PanelAnimation.CurtainOpen:
+                        UpdateCurtainAnimation(element, 1f);
+                        break;
+                }
+                // Mark as complete
+                element.isAnimating = false;
+                Debug.Log($"[ComicScene] Element '{element.elementName}' instant animation completed (duration was {element.animationDuration})");
                 return;
             }
             
@@ -708,6 +819,7 @@ namespace Vampire
             if (t >= 1f)
             {
                 element.isAnimating = false;
+                Debug.Log($"[ComicScene] Element '{element.elementName}' animation completed after {(Time.time - element.animationStartTime):F1}s");
                 
                 // Clean up curtain bars
                 if (element.curtainLeft != null)
@@ -724,26 +836,26 @@ namespace Vampire
         }
         
         /// <summary>
-        /// Update curtain reveal animation
+        /// Update vertical curtain reveal animation (top and bottom)
         /// </summary>
         private void UpdateCurtainAnimation(ComicElement element, float t)
         {
             if (element.curtainLeft != null && element.curtainRight != null)
             {
-                RectTransform leftRT = element.curtainLeft.GetComponent<RectTransform>();
-                RectTransform rightRT = element.curtainRight.GetComponent<RectTransform>();
+                RectTransform topRT = element.curtainLeft.GetComponent<RectTransform>();
+                RectTransform bottomRT = element.curtainRight.GetComponent<RectTransform>();
                 
-                // Left curtain slides from center to left edge (covers left half, then slides away)
-                // Start: covers left 50%, End: off screen to the left
-                float leftAnchor = Mathf.Lerp(0.5f, -0.5f, t); // Slides from center to off-screen left
-                leftRT.anchorMin = new Vector2(0f, 0f);
-                leftRT.anchorMax = new Vector2(leftAnchor, 1f);
+                // Top curtain slides from center to top edge (covers top half, then slides away)
+                // Start: covers top 50%, End: off screen to the top
+                float topAnchor = Mathf.Lerp(0.5f, 1.5f, t); // Slides from center to off-screen top
+                topRT.anchorMin = new Vector2(0f, topAnchor);
+                topRT.anchorMax = new Vector2(1f, 1f);
                 
-                // Right curtain slides from center to right edge (covers right half, then slides away)
-                // Start: covers right 50%, End: off screen to the right
-                float rightAnchor = Mathf.Lerp(0.5f, 1.5f, t); // Slides from center to off-screen right
-                rightRT.anchorMin = new Vector2(rightAnchor, 0f);
-                rightRT.anchorMax = new Vector2(1f, 1f);
+                // Bottom curtain slides from center to bottom edge (covers bottom half, then slides away)
+                // Start: covers bottom 50%, End: off screen to the bottom
+                float bottomAnchor = Mathf.Lerp(0.5f, -0.5f, t); // Slides from center to off-screen bottom
+                bottomRT.anchorMin = new Vector2(0f, 0f);
+                bottomRT.anchorMax = new Vector2(1f, bottomAnchor);
             }
         }
         

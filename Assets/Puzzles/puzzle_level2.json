@@ -1,20 +1,18 @@
 {
-  "name": "Level 2 - Funnel Pattern",
-  "rows": 12,
-  "columns": 9,
-  "cellSize": 1.0,
+  "name": "Level 2 - Simple Funnel",
+  "rows": 10,
+  "columns": 7,
+  "cellSize": 2.5,
   "grid": [
-    "wall", "dz", "dz", "dz", "dz", "dz", "dz", "dz", "wall",
-    "wall", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "wall",
-    "wall", "wall\\", "empty", "gate:x2", "empty", "gate:x2", "empty", "wall/", "wall",
-    "wall", "null", "wall\\", "empty", "empty", "empty", "wall/", "null", "wall",
-    "wall", "null", "null", "wall\\", "empty", "wall/", "null", "null", "wall",
-    "wall", "null", "null", "empty", "gate:x3", "empty", "null", "null", "wall",
-    "wall", "null", "null", "wall\\", "empty", "wall/", "null", "null", "wall",
-    "wall", "null", "wall\\", "empty", "gate:x4", "empty", "wall/", "null", "wall",
-    "wall", "wall\\", "empty", "empty", "empty", "empty", "empty", "wall/", "wall",
-    "wall", "empty", "empty", "empty", "gate:x5", "empty", "empty", "empty", "wall",
-    "wall", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "wall",
-    "wall", "goal", "goal", "goal", "goal", "goal", "goal", "goal", "wall"
+    "wall", "dz", "dz", "dz", "dz", "dz", "wall",
+    "wall", "empty", "empty", "empty", "empty", "wall/", "wall",
+    "wall", "wall\\", "empty", "empty", "empty", "empty", "wall",
+    "wall", "empty", "gate:", "empty", "gate:", "empty", "wall",
+    "wall", "empty", "empty", "empty", "empty", "empty", "wall",
+    "wall", "empty", "empty", "empty", "gate:", "empty", "wall",
+    "wall", "empty", "gate:", "empty", "empty", "empty", "wall",
+    "wall", "empty", "empty", "empty", "empty", "empty", "wall",
+    "wall", "empty", "wall\\", "empty", "wall/", "empty", "wall",
+    "wall", "empty", "empty", "goal", "empty", "empty", "wall"
   ]
 }

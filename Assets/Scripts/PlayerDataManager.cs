@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace Vampire.DropPuzzle
 {
@@ -23,6 +24,7 @@ namespace Vampire.DropPuzzle
         public DropPuzzleUpgrades DropPuzzle = new DropPuzzleUpgrades();
         public FPSCollectorUpgrades FPSCollector = new FPSCollectorUpgrades();
         public CraftingUpgrades Crafting = new CraftingUpgrades();
+        public HelperSystemUpgrades Helpers = new HelperSystemUpgrades();
         
         [Header("Meta Progression")]
         public int TotalRunsCompleted = 0;
@@ -245,6 +247,7 @@ namespace Vampire.DropPuzzle
             DropPuzzle = new DropPuzzleUpgrades();
             FPSCollector = new FPSCollectorUpgrades();
             Crafting = new CraftingUpgrades();
+            Helpers = new HelperSystemUpgrades();
             TotalRunsCompleted = 0;
             HighestLevelReached = 1;
             TutorialCompleted = false;
@@ -402,5 +405,108 @@ namespace Vampire.DropPuzzle
         Good = 1,      // Uncommon (unlock: ~20%)
         Great = 2,     // Rare (unlock: ~5%)
         Excellent = 3  // Epic (unlock: ~1%)
+    }
+    
+    /// <summary>
+    /// HELPER SYSTEM UPGRADES - Goblin/Ghoul helpers for automatic rice collection
+    /// </summary>
+    [System.Serializable]
+    public class HelperSystemUpgrades
+    {
+        [Header("Helper Purchase & Inventory")]
+        public int ownedGoblins = 0;          // Total goblin helpers purchased
+        public int ownedGhouls = 0;           // Total ghoul helpers purchased
+        
+        [Header("Helper Efficiency")]
+        public float ricePerSecond = 1.0f;    // Base collection rate per helper
+        public float movementSpeed = 1.0f;    // How fast helpers move around
+        public float collectRadius = 2.0f;    // Range helpers can collect from
+        public bool canCollectRare = false;   // Can helpers collect special rice types
+        
+        [Header("Zone Management")]
+        public List<string> unlockedZones = new List<string>(); // Zone IDs player has discovered
+        public List<DeployedHelper> deployedHelpers = new List<DeployedHelper>(); // Currently active helpers
+        
+        [Header("Helper Upgrades")]
+        public int helperCapacityBonus = 0;   // +X max helpers deployable
+        public bool hasAutoScavenge = false;  // Helpers work when player offline
+        public float offlineEfficiency = 0.5f; // 50% collection rate when offline
+        public bool canUpgradeHelpers = false; // Individual helper upgrades
+        
+        [Header("Special Abilities")]
+        public bool hasHelperStorage = false;  // Helpers can store rice before returning
+        public int storageCapacity = 10;       // Rice each helper can hold
+        public bool canCallHelpers = false;    // Summon all helpers to player location
+        
+        /// <summary>
+        /// Get maximum helpers deployable (base + upgrades)
+        /// </summary>
+        public int GetMaxHelpers()
+        {
+            return (ownedGoblins + ownedGhouls) + helperCapacityBonus;
+        }
+        
+        /// <summary>
+        /// Get currently deployed helper count
+        /// </summary>
+        public int GetDeployedHelperCount()
+        {
+            return deployedHelpers.Count;
+        }
+        
+        /// <summary>
+        /// Check if player can deploy more helpers
+        /// </summary>
+        public bool CanDeployMoreHelpers()
+        {
+            return GetDeployedHelperCount() < GetMaxHelpers();
+        }
+        
+        /// <summary>
+        /// Get total investment in helper system upgrades
+        /// </summary>
+        public int GetTotalUpgradeLevel()
+        {
+            int total = 0;
+            total += ownedGoblins * 10;                     // 10 points per goblin
+            total += ownedGhouls * 20;                      // 20 points per ghoul (more expensive)
+            total += (int)((ricePerSecond - 1.0f) * 50);   // 50 points per 0.1 rice/sec increase
+            total += helperCapacityBonus * 25;             // 25 points per extra capacity
+            total += unlockedZones.Count * 15;             // 15 points per zone unlocked
+            return total;
+        }
+    }
+    
+    /// <summary>
+    /// Data for a deployed helper in a specific zone
+    /// </summary>
+    [System.Serializable]
+    public class DeployedHelper
+    {
+        public string helperId;           // Unique identifier for this helper
+        public HelperType type;          // Goblin or Ghoul
+        public string zoneId;            // Which zone this helper is deployed in
+        public Vector3 lastKnownPosition; // Last position in the zone
+        public float totalRiceCollected; // Lifetime rice collected by this helper
+        public float deployedTimestamp;  // When this helper was deployed (for offline calculation)
+        
+        public DeployedHelper(string id, HelperType helperType, string zone)
+        {
+            helperId = id;
+            type = helperType;
+            zoneId = zone;
+            lastKnownPosition = Vector3.zero;
+            totalRiceCollected = 0f;
+            deployedTimestamp = Time.time;
+        }
+    }
+    
+    /// <summary>
+    /// Types of helpers available
+    /// </summary>
+    public enum HelperType
+    {
+        Goblin,    // Cheaper, slower, but reliable
+        Ghoul      // More expensive, faster, special abilities
     }
 }

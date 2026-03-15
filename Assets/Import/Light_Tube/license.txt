@@ -1,0 +1,11 @@
+Model Information:
+* title:	Light Tube
+* source:	https://sketchfab.com/3d-models/light-tube-a9764df776604b5089ae150197770dee
+* author:	johpichler (https://sketchfab.com/johpichler)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Light Tube" (https://sketchfab.com/3d-models/light-tube-a9764df776604b5089ae150197770dee) by johpichler (https://sketchfab.com/johpichler) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

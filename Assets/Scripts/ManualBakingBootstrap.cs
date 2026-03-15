@@ -13,7 +13,7 @@ namespace Vampire.Rice
     {
         void Start()
         {
-            // Debug.Log("[ManualBakingBootstrap] Starting manual baking process...");
+            Debug.Log("[ManualBakingBootstrap] === STARTING ENTITY CONVERSION ===");
             
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
@@ -131,10 +131,27 @@ namespace Vampire.Rice
                 Debug.Log($"[ManualBakingBootstrap] ✅ RiceSpawnPoint added for zone '{spawnPointAuthoring.ZoneName}' - Size: {spawnBounds.size}, FloorY={floorY}, Margin={spawnPointAuthoring.WallMargin}");
             }
 
-            // Convert Player
+            // Convert Player - HANDLE DUPLICATES FROM SCENE TRANSITIONS
             var playerAuthoring = FindObjectOfType<Player.PlayerAuthoring>();
             if (playerAuthoring != null)
             {
+                // First, clean up any existing player entities to prevent duplicates
+                var existingPlayerQuery = entityManager.CreateEntityQuery(typeof(Player.PlayerData));
+                var existingPlayers = existingPlayerQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+                
+                if (existingPlayers.Length > 0)
+                {
+                    Debug.Log($"[ManualBakingBootstrap] Found {existingPlayers.Length} existing player entities, cleaning up...");
+                    for (int i = 0; i < existingPlayers.Length; i++)
+                    {
+                        entityManager.DestroyEntity(existingPlayers[i]);
+                    }
+                    Debug.Log($"[ManualBakingBootstrap] ✅ Cleaned up {existingPlayers.Length} duplicate player entities");
+                }
+                existingPlayers.Dispose();
+                existingPlayerQuery.Dispose();
+                
+                // Now create the new player entity
                 var playerEntity = GameObjectEntity.GetEntity(entityManager, playerAuthoring.gameObject);
                 
                 entityManager.AddComponentData(playerEntity, new Player.PlayerData
@@ -157,7 +174,7 @@ namespace Vampire.Rice
                 Debug.Log($"[ManualBakingBootstrap] ✅ Player entity created at {playerAuthoring.transform.position}");
             }
 
-            Debug.Log("[ManualBakingBootstrap] 🎉 Manual conversion complete!");
+            Debug.Log("[ManualBakingBootstrap] ✅ Manual conversion complete! Entities ready for rice collection.");
         }
     }
 

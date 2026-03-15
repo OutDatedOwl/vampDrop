@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System;
 
 namespace Vampire.DropPuzzle
@@ -52,7 +53,28 @@ namespace Vampire.DropPuzzle
             Instance = this;
             DontDestroyOnLoad(gameObject);
             
+            // Subscribe to scene load events to auto-resume when returning to FPS scene
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            
             Debug.Log("[DayNightCycle] Initialized and marked DontDestroyOnLoad");
+        }
+        
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+        
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // Auto-resume when returning to FPS scene
+            if (scene.name == "FPS_Collect")
+            {
+                if (isPaused)
+                {
+                    Resume();
+                    Debug.Log("[DayNightCycle] Auto-resumed cycle on FPS_Collect scene load");
+                }
+            }
         }
         
         private void Start()

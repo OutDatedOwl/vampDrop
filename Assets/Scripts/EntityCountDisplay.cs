@@ -63,8 +63,14 @@ namespace Vampire
                 }
                 else if (playerCount > 1)
                 {
-                    // Multiple players during scene transition - skip this frame
-                    Debug.LogWarning($"[EntityCountDisplay] {playerCount} player entities detected during scene transition");
+                    // Multiple players during scene transition - use first available
+                    var players = playerQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+                    if (players.Length > 0 && world.EntityManager.Exists(players[0]))
+                    {
+                        var playerData = world.EntityManager.GetComponentData<Player.PlayerData>(players[0]);
+                        collectedCount = playerData.RiceCollected;
+                    }
+                    players.Dispose();
                 }
                 playerQuery.Dispose();
 

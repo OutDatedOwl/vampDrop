@@ -9,6 +9,9 @@ namespace Vampire.Player
         public Transform cameraTransform;
         public LayerMask groundMask;
 
+        [Header("Audio")]
+        public FPSAudioManager audioManager;
+
         [Header("Movement Settings")]
         public float walkSpeed = 7f;
         public float runSpeed = 12f;
@@ -25,6 +28,18 @@ namespace Vampire.Player
         [Header("Ground Check")]
         public float groundCheckRadius = 0.3f;
         public float groundCheckDistance = 0.4f;
+        
+        [Header("Jump Settings")]
+        [Tooltip("Cooldown between jumps in seconds")]
+        public float jumpCooldown = 0.3f;
+        
+        [Tooltip("Y velocity damping factor (0-1, higher = more damping)")]
+        [Range(0f, 1f)]
+        public float yVelocityDamping = 0.15f;
+        
+        [Header("Debug Ground Detection")]
+        [Tooltip("Enable detailed ground detection logging")]
+        public bool debugGroundDetection = true;
 
         // Private variables
         private CharacterController controller;
@@ -35,6 +50,7 @@ namespace Vampire.Player
         private float smoothMouseX = 0f;
         private float smoothMouseY = 0f;
         private bool isGrounded;
+        private float lastJumpTime = -999f; // Track last jump time for cooldown
 
         void Start()
         {
@@ -49,6 +65,17 @@ namespace Vampire.Player
             if (cameraTransform == null)
             {
                 cameraTransform = Camera.main.transform;
+            }
+
+            // Find audio manager if not assigned
+            if (audioManager == null)
+            {
+                audioManager = FindObjectOfType<FPSAudioManager>();
+                Debug.Log($"[FPSController] Audio manager found: {audioManager != null}");
+            }
+            else
+            {
+                Debug.Log("[FPSController] Audio manager already assigned");
             }
 
             Debug.Log("[FPSController] Initialized");
@@ -87,9 +114,40 @@ namespace Vampire.Player
 
         void ProcessMovement()
         {
-            // Ground check
+            // Ground check with enhanced debugging
             Vector3 groundCheckPos = transform.position + Vector3.up * groundCheckRadius;
             isGrounded = Physics.CheckSphere(groundCheckPos, groundCheckRadius, groundMask);
+            
+            // Also check with a simple raycast as backup
+            RaycastHit hit;
+            bool raycastGrounded = Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, out hit, groundCheckDistance + 0.1f, groundMask);
+            
+            if (!isGrounded && raycastGrounded)
+            {
+                isGrounded = true;
+            }
+            
+            // Detailed ground detection debugging
+            if (debugGroundDetection && Time.frameCount % 120 == 0) // Every 2 seconds
+            {
+                int layerMaskValue = groundMask.value;
+                Debug.Log($"[FPSController] === Ground Detection Debug ===");
+                Debug.Log($"Player Position: {transform.position}");
+                Debug.Log($"Ground Check Position: {groundCheckPos}");
+                Debug.Log($"Ground Check Radius: {groundCheckRadius}");
+                Debug.Log($"Ground Mask Value: {layerMaskValue} (Binary: {System.Convert.ToString(layerMaskValue, 2)})");
+                Debug.Log($"Sphere Check Result: {isGrounded}");
+                Debug.Log($"Raycast Result: {raycastGrounded}");
+                if (raycastGrounded)
+                {
+                    Debug.Log($"Raycast Hit: {hit.collider.name} on layer {hit.collider.gameObject.layer}");
+                }
+                
+                // Check what colliders are actually nearby
+                Collider[] nearbyColliders = Physics.OverlapSphere(groundCheckPos, groundCheckRadius * 2f);
+                Debug.Log($"Nearby Colliders ({nearbyColliders.Length}): {string.Join(", ", System.Array.ConvertAll(nearbyColliders, c => $"{c.name}(L{c.gameObject.layer})"))}");
+                Debug.Log("================================");
+            }
 
             // Reset vertical velocity when grounded
             if (isGrounded && velocity.y < 0)
@@ -141,16 +199,73 @@ namespace Vampire.Player
             }
 
             // Apply movement
-            controller.Move(move * targetSpeed * Time.deltaTime);
+            Vector3 moveVector = move * targetSpeed * Time.deltaTime;
+            controller.Move(moveVector);
 
-            // Jump
-            if (jumping && isGrounded && !crouching)
+            // Notify audio manager of movement state (optimized)
+            if (audioManager != null)
             {
-                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                if (moveVector.magnitude > 0.1f)
+                {
+                    // Player is moving - reduce audio manager calls for performance
+                    if (Time.frameCount % 3 == 0) // Only call audio manager every 3 frames
+                    {
+                        audioManager.OnPlayerMoving(transform.position, running, crouching, isGrounded);
+                    }
+                    
+                    // Reduce log frequency
+                    if (Time.frameCount % 240 == 0) // Log once per 4 seconds
+                    {
+                        Debug.Log($"[FPSController] Player moving - MoveVector: {moveVector.magnitude:F3}, Running: {running}, Crouching: {crouching}, Grounded: {isGrounded}");
+                    }
+                }
+                else
+                {
+                    // Only call OnPlayerStopped occasionally to avoid spam
+                    if (Time.frameCount % 10 == 0)
+                    {
+                        audioManager.OnPlayerStopped();
+                    }
+                    
+                    if (Time.frameCount % 240 == 0)
+                    {
+                        Debug.Log($"[FPSController] Player stopped - MoveVector: {moveVector.magnitude:F3}");
+                    }
+                }
+            }
+            else
+            {
+                // Log missing audio manager occasionally
+                if (Time.frameCount % 300 == 0) // Every 5 seconds
+                {
+                    Debug.LogWarning("[FPSController] Audio manager is null!");
+                }
             }
 
-            // Apply gravity
+            // Jump (with cooldown to prevent infinite jumping)
+            bool canJump = isGrounded && !crouching && (Time.time - lastJumpTime >= jumpCooldown);
+            
+            if (jumping && canJump)
+            {
+                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                lastJumpTime = Time.time;
+                
+                // Play jump sound
+                if (audioManager != null)
+                {
+                    audioManager.OnPlayerJump();
+                }
+            }
+
+            // Apply gravity with Y velocity damping to prevent bouncing
             velocity.y += gravity * Time.deltaTime;
+            
+            // Dampen Y velocity when in air (prevents infinite jumping exploit)
+            if (!isGrounded)
+            {
+                velocity.y *= (1f - yVelocityDamping * Time.deltaTime);
+            }
+            
             controller.Move(velocity * Time.deltaTime);
         }
 

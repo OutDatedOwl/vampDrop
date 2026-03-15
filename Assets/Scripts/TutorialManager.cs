@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
 namespace Vampire.DropPuzzle
@@ -216,7 +216,7 @@ namespace Vampire.DropPuzzle
             {
                 // Start collect money quest
                 tutorialStep = 6;
-                Debug.Log($"[TutorialManager] ✅ Quest 5 complete! Starting Quest 6: Collect Money");
+                Debug.Log($"[TutorialManager] âœ… Quest 5 complete! Starting Quest 6: Collect Money");
                 questManager.StartQuest(QUEST_COLLECT_MONEY);
                 Debug.Log($"[TutorialManager] Quest 6 started. Current quest: {questManager.currentQuest?.title}");
             }
@@ -240,7 +240,7 @@ namespace Vampire.DropPuzzle
             if (cycleManager != null)
             {
                 cycleManager.ForcePhase(DayNightCycleManager.TimeOfDay.Night);
-                Debug.Log("[TutorialManager] 🌙 Forced NIGHT for tutorial");
+                Debug.Log("[TutorialManager] ðŸŒ™ Forced NIGHT for tutorial");
             }
             
             // Complete the quest
@@ -338,7 +338,7 @@ namespace Vampire.DropPuzzle
         {
             tutorialActive = false;
             
-            Debug.Log("[TutorialManager] ✅ TUTORIAL COMPLETE!");
+            Debug.Log("[TutorialManager] âœ… TUTORIAL COMPLETE!");
             
             // Enable day/night cycle
             if (cycleManager != null)
@@ -361,7 +361,7 @@ namespace Vampire.DropPuzzle
             if (BuyZone != null)
             {
                 BuyZone.SetActive(true);
-                Debug.Log("[TutorialManager] 🛒 BuyZone ENABLED");
+                Debug.Log("[TutorialManager] ðŸ›’ BuyZone ENABLED");
             }
             else
             {
@@ -371,7 +371,7 @@ namespace Vampire.DropPuzzle
             if (FlinkCharacter != null)
             {
                 FlinkCharacter.SetActive(true);
-                Debug.Log("[TutorialManager] 👤 Flink character ENABLED");
+                Debug.Log("[TutorialManager] ðŸ‘¤ Flink character ENABLED");
             }
         }
         
@@ -391,3 +391,4 @@ namespace Vampire.DropPuzzle
         }
     }
 }
+

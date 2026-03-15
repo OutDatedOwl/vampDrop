@@ -1,0 +1,11 @@
+Model Information:
+* title:	Vent Collection
+* source:	https://sketchfab.com/3d-models/vent-collection-2232b10eef824244b8ebc0d9a2473d63
+* author:	XploRXR (https://sketchfab.com/XploRXR)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Vent Collection" (https://sketchfab.com/3d-models/vent-collection-2232b10eef824244b8ebc0d9a2473d63) by XploRXR (https://sketchfab.com/XploRXR) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)

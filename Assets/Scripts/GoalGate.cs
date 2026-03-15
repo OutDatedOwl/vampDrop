@@ -28,7 +28,15 @@ namespace Vampire.DropPuzzle
                 Debug.LogWarning("[GoalGate] Collider was not set as trigger, fixed automatically");
             }
             
-            Debug.Log("[GoalGate] Goal gate ready!");
+            // Apply the gate color
+            Renderer renderer = GetComponent<Renderer>();
+            if (renderer != null && renderer.material != null)
+            {
+                Debug.Log($"[GoalGate] Setting goal color to: {GateColor} (was {renderer.material.color})");
+                renderer.material.color = GateColor;
+            }
+            
+            Debug.Log($"[GoalGate] Goal gate ready at position {transform.position}! Color: {GateColor}");
         }
         
         private void OnTriggerEnter(Collider other)

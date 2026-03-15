@@ -1,0 +1,11 @@
+Model Information:
+* title:	Rusty Industrial Wardrobe
+* source:	https://sketchfab.com/3d-models/rusty-industrial-wardrobe-4543aa4f542c46c3945c22568423cade
+* author:	Nikoleta.Zhecheva (https://sketchfab.com/Nikoleta.Zhecheva)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Rusty Industrial Wardrobe" (https://sketchfab.com/3d-models/rusty-industrial-wardrobe-4543aa4f542c46c3945c22568423cade) by Nikoleta.Zhecheva (https://sketchfab.com/Nikoleta.Zhecheva) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

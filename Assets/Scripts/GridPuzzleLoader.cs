@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 namespace Vampire.DropPuzzle
@@ -157,31 +157,44 @@ namespace Vampire.DropPuzzle
         
         private void BuildFromGrid()
         {
+            Debug.Log("[GridPuzzleLoader] =================== UNIFIED GRID LOGIC ===================");
+            
             // Create background behind puzzle
             CreateBackground();
             
-            // Calculate starting position (center the grid)
-            float startX = -(layout.columns - 1) * layout.cellSize / 2f;
+            // UNIFIED GRID: Grid is source of truth, centered on X=0
+            float totalWidth = (layout.columns - 1) * layout.cellSize;
+            float startX = -totalWidth / 2.0f; // Start at negative half-width for centering
             float currentY = StartY;
+            
+            Debug.Log($"[GridPuzzleLoader] Grid: {layout.columns} columns, cellSize={layout.cellSize}");
+            Debug.Log($"[GridPuzzleLoader] Total width: {totalWidth}, startX: {startX}");
+            Debug.Log($"[GridPuzzleLoader] Middle column (3) will be at X=0: {startX + 3 * layout.cellSize}");
             
             for (int row = 0; row < layout.rows; row++)
             {
                 for (int col = 0; col < layout.columns; col++)
                 {
                     string cellType = layout.GetCell(row, col);
-                    Vector3 position = new Vector3(
+                    // Every cell gets a predictable grid position
+                    Vector3 calculatedPosition = new Vector3(
                         startX + col * layout.cellSize,
                         currentY,
                         0
                     );
                     
-                    BuildCell(cellType, position, row, col);
+                    if (cellType == "goal")
+                    {
+                        Debug.Log($"[GridPuzzleLoader] 🎯 GOAL: Row {row}, Col {col}, Position {calculatedPosition}");
+                    }
+                    
+                    BuildCell(cellType, calculatedPosition, row, col);
                 }
                 
                 currentY -= CellHeight;
             }
             
-            Debug.Log($"[GridPuzzleLoader] ✅ Built {spawnedObjects.Count} objects");
+            Debug.Log("[GridPuzzleLoader] =================== GRID COMPLETE ===================");
         }
         
         /// <summary>
@@ -194,6 +207,7 @@ namespace Vampire.DropPuzzle
                 // Use custom prefab
                 backgroundObject = Instantiate(BackgroundPrefab, BackgroundPosition, Quaternion.identity);
                 backgroundObject.name = "PuzzleBackground";
+                backgroundObject.transform.rotation = Quaternion.Euler(0, 180, 0);
                 backgroundObject.transform.localScale = BackgroundScale;
             }
             else
@@ -202,6 +216,7 @@ namespace Vampire.DropPuzzle
                 backgroundObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 backgroundObject.name = "PuzzleBackground";
                 backgroundObject.transform.position = BackgroundPosition;
+                 backgroundObject.transform.rotation = Quaternion.Euler(0, 180, 0);
                 backgroundObject.transform.localScale = BackgroundScale;
                 
                 // Remove collider (background shouldn't interact)
@@ -234,24 +249,26 @@ namespace Vampire.DropPuzzle
         
         private void BuildCell(string cellType, Vector3 position, int row, int col)
         {
-            if (string.IsNullOrEmpty(cellType) || cellType == "empty" || cellType == "null")
-            {
-                return; // Empty space
-            }
-            
+            if (string.IsNullOrEmpty(cellType) || cellType == "empty" || cellType == "null") return;
+
             GameObject obj = null;
-            
+
+            // UNIFIED APPROACH: All objects use grid position as base
             if (cellType == "wall")
             {
-                // Smart wall alignment based on grid position
-                Vector3 alignedPos = GetAlignedWallPosition(position, row, col);
-                obj = BuildWall(alignedPos, 0, row, col); // Vertical wall
+                // Walls positioned at cell edges for clean connections
+                Vector3 wallPosition = position;
+                wallPosition.x += layout.cellSize * 0.5f; // Move to right edge of cell
+                obj = BuildWall(wallPosition, 0, row, col);
             }
-            else if (cellType == "wall\\" || cellType == "wall/") // Diagonal walls for funnel
+            else if (cellType == "wall\\" || cellType == "wall/")
             {
-                // Diagonal walls span corner-to-corner within their cell
+                // Diagonal walls also use edge positioning for connections
+                Vector3 wallPosition = position;
+                wallPosition.x += layout.cellSize * 0.5f;
+                
                 float angle = cellType == "wall\\" ? 45f : -45f;
-                obj = BuildWall(position, angle, row, col);
+                obj = BuildWall(wallPosition, angle, row, col);
             }
             else if (cellType == "dz")
             {
@@ -259,19 +276,14 @@ namespace Vampire.DropPuzzle
             }
             else if (cellType.StartsWith("gate:"))
             {
-                string multiplierStr = cellType.Substring(5); // Remove "gate:"
-                int multiplier = ParseMultiplier(multiplierStr);
-                obj = BuildMultiplierGate(position, multiplier);
+                obj = BuildGateWithChances(position, cellType);
             }
             else if (cellType == "goal")
             {
+                // Goals use exact grid position for perfect alignment
                 obj = BuildGoalCell(position);
             }
-            else
-            {
-                Debug.LogWarning($"[GridPuzzleLoader] Unknown cell type: {cellType} at ({row},{col})");
-            }
-            
+
             if (obj != null)
             {
                 obj.transform.SetParent(transform);
@@ -279,98 +291,57 @@ namespace Vampire.DropPuzzle
             }
         }
         
-        private GameObject BuildWall(Vector3 position, float zRotation, int row, int col)
+       private GameObject BuildWall(Vector3 position, float zRotation, int row, int col)
         {
             GameObject wall;
-            
-            // For diagonal walls (45° rotation), we need to adjust scale
-            // because rotation affects how dimensions appear
-            bool isDiagonal = (zRotation == 45f || zRotation == -45f);
+            bool isDiagonal = (Mathf.Abs(zRotation) == 45f);
             Vector3 scale;
-            
+
             if (isDiagonal)
             {
-                // Diagonal walls: use proper diagonal span within one cell
-                float diagonalLength = Mathf.Sqrt(layout.cellSize * layout.cellSize + CellHeight * CellHeight);
-                // Add 50% overlap so consecutive diagonals connect without gaps
-                diagonalLength = diagonalLength * 1.5f;
-                scale = new Vector3(WallWidth, diagonalLength, 1.5f); // Increased Z depth for better collision
-                
-                // CRITICAL: Offset X position so diagonal edges align when stacked vertically
-                // wall\\ (45°): Slopes top-left to bottom-right, shift LEFT by quarter cell
-                // wall/ (-45°): Slopes top-right to bottom-left, shift RIGHT by quarter cell
-                if (zRotation == 45f) // wall\\
-                {
-                    position.x -= layout.cellSize * 0.25f;
-                }
-                else if (zRotation == -45f) // wall/
-                {
-                    position.x += layout.cellSize * 0.25f;
-                }
-                
-                // SMART CONNECTION: Check if there's a diagonal above that this should connect to
-                bool shouldConnectAbove = ShouldConnectToAbove(row, col, zRotation);
-                if (shouldConnectAbove)
-                {
-                    // Shift DOWN to extend top edge upward and close gap with diagonal above
-                    position.y -= CellHeight * 0.5f;
-                    Debug.Log($"[GridPuzzleLoader] Diagonal at row {row}, col {col}: Connecting to above, shifted DOWN to y={position.y}");
-                }
-                else
-                {
-                    Debug.Log($"[GridPuzzleLoader] Diagonal at row {row}, col {col}: No connection needed, staying at y={position.y}");
-                }
+                // Calculate hypotenuse so diagonal fits perfectly corner-to-corner
+                float length = Mathf.Sqrt(Mathf.Pow(layout.cellSize, 2) + Mathf.Pow(CellHeight, 2));
+                scale = new Vector3(WallWidth, length * 1.05f, 1.5f); // 5% bleed for physics
             }
             else
             {
-                // Vertical/horizontal walls: Should only span ONE ROW height (CellHeight)
-                // NOT cellSize which is horizontal spacing - use CellHeight for vertical span!
-                scale = new Vector3(WallWidth, CellHeight, 0.5f);
+                // Use clean WallWidth without extra padding
+                scale = new Vector3(WallWidth, CellHeight, 1.5f);
             }
-            
+
+            // Create Object
             if (WallPrefab != null)
             {
                 wall = Instantiate(WallPrefab, position, Quaternion.Euler(0, 0, zRotation));
-                wall.transform.localScale = scale;
-                Debug.Log($"[GridPuzzleLoader] Spawned wall prefab at {position} rotation {zRotation} scale {scale}");
             }
             else
             {
                 wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 wall.transform.position = position;
                 wall.transform.rotation = Quaternion.Euler(0, 0, zRotation);
-                wall.transform.localScale = scale;
-                
-                if (WallMaterial != null)
-                {
-                    wall.GetComponent<Renderer>().material = WallMaterial;
-                }
-                else
-                {
-                    wall.GetComponent<Renderer>().material.color = new Color(0.3f, 0.2f, 0.1f); // Brown
-                }
-                Debug.Log($"[GridPuzzleLoader] Created default cube wall at {position} rotation {zRotation} scale {scale}");
+                if (WallMaterial != null) wall.GetComponent<Renderer>().material = WallMaterial;
             }
-            
-            wall.name = zRotation == 0 ? "Wall" : $"Wall_Diagonal{zRotation}";
-            wall.tag = "Wall"; // Tag for ECS collision detection
-            
-            // Ensure wall has collider for physics (NOT a trigger)
-            Collider wallCollider = wall.GetComponent<Collider>();
-            if (wallCollider != null)
-            {
-                wallCollider.isTrigger = false; // Solid collision
-            }
-            
-            // Add Rigidbody (kinematic) for better physics interaction
+
+            wall.transform.localScale = scale;
+            wall.name = $"Wall_{row}_{col}";
+            wall.tag = "Wall";
+
+            // PHYSICS FIX: Safely add/get Rigidbody to prevent MissingComponentException
             Rigidbody rb = wall.GetComponent<Rigidbody>();
             if (rb == null)
             {
                 rb = wall.AddComponent<Rigidbody>();
             }
-            rb.isKinematic = true; // Wall doesn't move
-            rb.useGravity = false;
             
+            rb.isKinematic = true; // Now safe to call
+            rb.useGravity = false;
+
+            // Ensure collider is a solid wall
+            if (wall.TryGetComponent<Collider>(out Collider colld))
+            {
+                colld.isTrigger = false;
+            }
+
             return wall;
         }
         
@@ -439,8 +410,8 @@ namespace Vampire.DropPuzzle
         
         /// <summary>
         /// Check if a diagonal wall should connect to another diagonal above it
-        /// wall\\ (45°): Check rows above in same or left columns
-        /// wall/ (-45°): Check rows above in same or right columns
+        /// wall\\ (45Â°): Check rows above in same or left columns
+        /// wall/ (-45Â°): Check rows above in same or right columns
         /// </summary>
         private bool ShouldConnectToAbove(int currentRow, int currentCol, float rotation)
         {
@@ -535,7 +506,7 @@ namespace Vampire.DropPuzzle
             // Validate prefab BEFORE adding component
             if (RiceBallPrefab == null)
             {
-                Debug.LogError($"[GridPuzzleLoader] ❌ No RiceBallPrefab assigned in GridPuzzleLoader Inspector! Multipliers won't work.");
+                Debug.LogError($"[GridPuzzleLoader] âŒ No RiceBallPrefab assigned in GridPuzzleLoader Inspector! Multipliers won't work.");
             }
             
             // Add multiplier component
@@ -549,18 +520,29 @@ namespace Vampire.DropPuzzle
         
         private GameObject BuildGoalCell(Vector3 position)
         {
+            Debug.Log($"[GridPuzzleLoader] 🎯 Building GOAL at position {position} (should be evenly spaced)");
+            
             GameObject goal = GameObject.CreatePrimitive(PrimitiveType.Cube);
             goal.transform.position = position;
             goal.transform.localScale = new Vector3(layout.cellSize * 0.6f, CellHeight * 0.4f, 0.5f);
+            
+            Debug.Log($"[GridPuzzleLoader] 🎯 GOAL final position: {goal.transform.position}, scale: {goal.transform.localScale}");
             
             // Make it a trigger
             Collider col = goal.GetComponent<Collider>();
             col.isTrigger = true;
             
-            // Green goal color
+            // Green goal color with proper shader
             Renderer renderer = goal.GetComponent<Renderer>();
-            Material mat = new Material(Shader.Find("Standard"));
+            Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            if (mat.shader == null)
+            {
+                // Fallback to Standard shader if URP not available
+                mat = new Material(Shader.Find("Standard"));
+            }
             mat.color = Color.green;
+            mat.SetFloat("_Metallic", 0.0f);
+            mat.SetFloat("_Smoothness", 0.5f);
             renderer.material = mat;
             
             // Add goal gate component (only to first goal cell)
@@ -568,6 +550,7 @@ namespace Vampire.DropPuzzle
             {
                 GoalGate goalComponent = goal.AddComponent<GoalGate>();
                 goal.name = "GoalGate";
+                Debug.Log($"[GridPuzzleLoader] Added GoalGate component to first goal");
             }
             else
             {
@@ -591,6 +574,87 @@ namespace Vampire.DropPuzzle
             }
         }
         
+                
+        /// <summary>
+        /// Enhanced gate building with dynamic chance rolling
+        /// For "gate:" entries, roll against player's gate chances
+        /// For "gate:x2" etc, use specified multiplier
+        /// </summary>
+        private GameObject BuildGateWithChances(Vector3 position, string gateType)
+        {
+            if (gateType.StartsWith("gate:"))
+            {
+                string multiplierStr = gateType.Substring(5);
+                
+                if (string.IsNullOrEmpty(multiplierStr))
+                {
+                    // Dynamic gate - roll against player chances
+                    int rolledMultiplier = RollGateMultiplier();
+                    if (rolledMultiplier == 0)
+                    {
+                        // No gate spawned
+                        Debug.Log($"[GridPuzzleLoader] Gate chance roll failed at {position} - no gate placed");
+                        return null;
+                    }
+                    
+                    Debug.Log($"[GridPuzzleLoader] Dynamic gate roll: x{rolledMultiplier} at {position}");
+                    return BuildMultiplierGate(position, rolledMultiplier);
+                }
+                else
+                {
+                    // Fixed multiplier specified
+                    int multiplier = ParseMultiplier(multiplierStr);
+                    Debug.Log($"[GridPuzzleLoader] Fixed gate: x{multiplier} at {position}");
+                    return BuildMultiplierGate(position, multiplier);
+                }
+            }
+            
+            return null;
+        }
+        
+        /// <summary>
+        /// Roll against player's gate chances to determine gate multiplier
+        /// Returns 0 if no gate should be placed, 2-4+ for multiplier gates
+        /// </summary>
+        private int RollGateMultiplier()
+        {
+            var playerData = PlayerDataManager.Instance;
+            if (playerData == null)
+            {
+                Debug.LogWarning("[GridPuzzleLoader] No PlayerDataManager found - no gates will spawn");
+                return 0;
+            }
+            
+            var gateChances = playerData.DropPuzzle;
+            
+            // Roll in order of rarity (highest multiplier first)
+            float roll = Random.Range(0f, 1f);
+            
+            // x4 Gates (rarest)
+            if (roll < gateChances.x4GateChance)
+            {
+                Debug.Log($"[GridPuzzleLoader] 🎯 x4 Gate rolled! ({gateChances.x4GateChance:P1} chance)");
+                return 4;
+            }
+            
+            // x3 Gates
+            if (roll < gateChances.x3GateChance)
+            {
+                Debug.Log($"[GridPuzzleLoader] 🎯 x3 Gate rolled! ({gateChances.x3GateChance:P1} chance)");
+                return 3;
+            }
+            
+            // x2 Gates (most common)
+            if (roll < gateChances.x2GateChance)
+            {
+                Debug.Log($"[GridPuzzleLoader] 🎯 x2 Gate rolled! ({gateChances.x2GateChance:P1} chance)");
+                return 2;
+            }
+            
+            // No gate
+            Debug.Log($"[GridPuzzleLoader] No gate rolled (chances: x2:{gateChances.x2GateChance:P1} x3:{gateChances.x3GateChance:P1} x4:{gateChances.x4GateChance:P1})");
+            return 0;
+        }
         private int ParseMultiplier(string str)
         {
             str = str.Replace("x", "").Trim();
@@ -626,3 +690,6 @@ namespace Vampire.DropPuzzle
         }
     }
 }
+
+
+

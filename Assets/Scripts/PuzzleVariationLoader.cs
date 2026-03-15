@@ -154,6 +154,9 @@ namespace Vampire.DropPuzzle
         
         private void BuildGoalGate()
         {
+            Debug.Log($"[PuzzleVariationLoader] !! Building Goal Gate at CORRECTED position: {CurrentVariation.GoalPosition}");
+            Debug.Log($"[PuzzleVariationLoader] This is the ACTUAL goal builder (not GridPuzzleLoader)");
+            
             GameObject goal;
             
             if (GoalGatePrefab != null)
@@ -170,9 +173,18 @@ namespace Vampire.DropPuzzle
                 col.isTrigger = true;
                 
                 Renderer renderer = goal.GetComponent<Renderer>();
-                Material mat = new Material(Shader.Find("Standard"));
+                Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                if (mat.shader == null)
+                {
+                    // Fallback to Standard shader if URP not available
+                    mat = new Material(Shader.Find("Standard"));
+                }
                 mat.color = Color.green;
+                mat.SetFloat("_Metallic", 0.0f);
+                mat.SetFloat("_Smoothness", 0.5f);
                 renderer.material = mat;
+                
+                Debug.Log($"[PuzzleVariationLoader] Goal color set with shader: {mat.shader.name}");
             }
             
             // Add/configure goal gate component

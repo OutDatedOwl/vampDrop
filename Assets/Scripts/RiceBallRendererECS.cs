@@ -20,9 +20,12 @@ namespace Vampire.DropPuzzle
         
         private EntityQuery ballQuery;
         private EntityManager entityManager;
+
+        private Matrix4x4[] matrixCache;
         
         private void Start()
         {
+            matrixCache = new Matrix4x4[MaxBallsPerBatch];
             entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
             
             // Create query for all rice balls
@@ -51,82 +54,37 @@ namespace Vampire.DropPuzzle
         
         private void Update()
         {
-            if (BallMesh == null || BallMaterial == null)
+            if (BallMesh == null || BallMaterial == null) return;
+
+            // 1. GATHER: This is the "Bridge". 
+            // We use 'using' so the memory is disposed of the millisecond the brackets close.
+            using (NativeArray<LocalTransform> transforms = ballQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob))
             {
-                if (Time.frameCount % 120 == 0)
+                if (transforms.Length == 0) return;
+
+                int totalBalls = transforms.Length;
+                int batches = Mathf.CeilToInt((float)totalBalls / MaxBallsPerBatch);
+
+                for (int batch = 0; batch < batches; batch++)
                 {
-                    Debug.LogWarning($"[BallRenderer] Cannot render - Mesh:{(BallMesh == null ? "NULL" : "OK")} Material:{(BallMaterial == null ? "NULL" : "OK")}");
-                }
-                return;
-            }
-            
-            // Get all ball transforms
-            NativeArray<LocalTransform> transforms = ballQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
-            
-            // Debug: Log entity count periodically
-            if (Time.frameCount % 300 == 0)
-            {
-                if (transforms.Length > 0)
-                {
-                    // Log first 3 ball positions for debugging
-                    string posDebug = "";
-                    for (int i = 0; i < Mathf.Min(3, transforms.Length); i++)
+                    int startIndex = batch * MaxBallsPerBatch;
+                    int count = Mathf.Min(MaxBallsPerBatch, totalBalls - startIndex);
+
+                    // 2. FILL: Use the pre-allocated matrixCache to avoid GC spikes
+                    for (int i = 0; i < count; i++)
                     {
-                        posDebug += $" [{i}]:{transforms[i].Position}";
+                        LocalTransform transform = transforms[startIndex + i];
+                        matrixCache[i] = Matrix4x4.TRS(
+                            transform.Position,
+                            transform.Rotation,
+                            new Vector3(transform.Scale, transform.Scale, transform.Scale * 0.1f)
+                        );
                     }
-                    Debug.Log($"[BallRenderer] Rendering {transforms.Length} balls. Positions:{posDebug}");
-                }
-                else
-                {
-                    Debug.LogWarning("[BallRenderer] Query returned 0 entities! No balls exist in ECS.");
+
+                    // 3. DRAW: Send to the GPU
+                    Graphics.DrawMeshInstanced(BallMesh, 0, BallMaterial, matrixCache, count);
                 }
             }
-            
-            if (transforms.Length == 0)
-            {
-                transforms.Dispose();
-                return;
-            }
-            
-            // Convert to matrices for GPU instancing
-            int totalBalls = transforms.Length;
-            int batches = Mathf.CeilToInt((float)totalBalls / MaxBallsPerBatch);
-            
-            for (int batch = 0; batch < batches; batch++)
-            {
-                int startIndex = batch * MaxBallsPerBatch;
-                int count = Mathf.Min(MaxBallsPerBatch, totalBalls - startIndex);
-                
-                Matrix4x4[] matrices = new Matrix4x4[count];
-                
-                for (int i = 0; i < count; i++)
-                {
-                    LocalTransform transform = transforms[startIndex + i];
-                    // Flat disc: normal XY scale, but Z=0.1 for thin cylinder
-                    matrices[i] = Matrix4x4.TRS(
-                        transform.Position,
-                        transform.Rotation,
-                        new Vector3(transform.Scale, transform.Scale, transform.Scale * 0.1f) // Flat disc!
-                    );
-                }
-                
-                // Draw instanced
-                Graphics.DrawMeshInstanced(
-                    BallMesh,
-                    0,
-                    BallMaterial,
-                    matrices,
-                    count,
-                    null,
-                    UnityEngine.Rendering.ShadowCastingMode.Off,
-                    false,
-                    0,
-                    null,
-                    UnityEngine.Rendering.LightProbeUsage.Off
-                );
-            }
-            
-            transforms.Dispose();
         }
         
         private void OnDestroy()

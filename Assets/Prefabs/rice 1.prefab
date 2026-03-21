@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3628087081206479728}
   - component: {fileID: 5694193083644120943}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: rice 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -57,7 +57,7 @@ GameObject:
   - component: {fileID: 8109952718475250958}
   - component: {fileID: 5577093496488775615}
   - component: {fileID: 1404143404131626400}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: rice
   m_TagString: Untagged
   m_Icon: {fileID: 0}

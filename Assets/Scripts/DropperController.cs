@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Vampire.DropPuzzle
 {
@@ -7,7 +8,11 @@ namespace Vampire.DropPuzzle
     /// Drops rice balls when player presses Space
     /// </summary>
     public class DropperController : MonoBehaviour
+
+    
     {
+
+        public static DropperController Instance { get; private set; }
         [Header("Movement")]
         [Tooltip("How fast the dropper moves horizontally")]
         public float MoveSpeed = 2f;
@@ -35,7 +40,19 @@ namespace Vampire.DropPuzzle
         private float moveDirection = 1f;
         private bool isDropping = false;
         private bool hasDropped = false;
-        
+        public static Stack<GameObject> BallPool = new Stack<GameObject>();
+        private void Awake()
+        {
+            // This tells the script "I am the one and only DropperController"
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+            else
+            {
+                Destroy(gameObject); // Prevent duplicates
+            }
+        }
         private void Start()
         {
             if (DropPoint == null)
@@ -69,6 +86,22 @@ namespace Vampire.DropPuzzle
                     Debug.LogError($"[DropperController] ❌ RiceBall prefab '{RiceBallPrefab.name}' is MISSING Collider! Add a SphereCollider.");
                 }
             }
+
+            if (RiceBallPrefab == null) return;
+
+            int poolSize = CalculateMaxPotentialBalls();
+            Debug.Log($"[DropperPool] Pre-warming pool with {poolSize} balls");
+
+            // CLEAR the pool first in case of scene reloads
+            BallPool.Clear();
+
+            for (int i = 0; i < poolSize; i++)
+            {
+                // We MUST use Instantiate here to create the initial objects
+                GameObject ball = Instantiate(RiceBallPrefab);
+                ball.SetActive(false);
+                BallPool.Push(ball);
+            }
             
             Debug.Log("[DropperController] Ready! Press SPACE to drop rice balls");
         }
@@ -76,23 +109,36 @@ namespace Vampire.DropPuzzle
         private void Update()
         {
             // Move dropper back and forth (only if not dropping)
-            if (!isDropping)
-            {
-                MoveDropper();
-            }
+            if (!isDropping) MoveDropper();
             
-            // Check for drop input
             if (Input.GetKeyDown(KeyCode.Space) && !hasDropped)
             {
-                if (DropAllAtOnce)
-                {
-                    StartCoroutine(DropAllBalls());
-                }
-                else
-                {
-                    TryDropBall();
-                }
+                if (DropAllAtOnce) StartCoroutine(DropAllBalls());
+                else TryDropBall();
             }
+        }
+
+        public GameObject GetBallFromPool(Vector3 position)
+        {
+            if (BallPool.Count > 0)
+            {
+                GameObject ball = BallPool.Pop();
+                ball.transform.position = position;
+                
+                // Reset velocity in case the ball was moving when it was disabled
+                Rigidbody rb = ball.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+
+                ball.SetActive(true);
+                return ball;
+            }
+            
+            Debug.LogWarning("[DropperController] Pool Exhausted! Consider increasing pool size.");
+            return null; 
         }
         
         private void MoveDropper()
@@ -114,6 +160,29 @@ namespace Vampire.DropPuzzle
             
             transform.position = new Vector3(newX, transform.position.y, transform.position.z);
         }
+        private int CalculateMaxPotentialBalls()
+        {
+            int baseBalls = DropPuzzleManager.Instance.RiceBallsAvailable;
+            
+            // Find every gate that actually spawned/loaded in the scene
+            MultiplierGate[] gates = Object.FindObjectsByType<MultiplierGate>(FindObjectsSortMode.None);
+            
+            if (gates.Length == 0) return baseBalls;
+
+            // Heuristic: If gates are sequential, the multiplier is multiplicative.
+            // If they are side-by-side, it's the maximum single gate.
+            // A safe "stress-test" buffer for a 1000-ball goal:
+            float totalMultiplier = 1f;
+            foreach (var gate in gates)
+            {
+                // For sequential games, multiply them. For safety, we cap the logic.
+                totalMultiplier *= gate.Multiplier;
+            }
+
+            // Cap the pool to your target performance limit (e.g., 2000 balls)
+            int calculatedMax = Mathf.CeilToInt(baseBalls * totalMultiplier);
+            return Mathf.Min(calculatedMax, 2000); 
+        }
         
         private System.Collections.IEnumerator DropAllBalls()
         {
@@ -134,18 +203,12 @@ namespace Vampire.DropPuzzle
                 // Spawn ball directly below drop point (no random offset to avoid collisions)
                 Vector3 spawnPos = DropPoint.position + Vector3.down * 0.3f; // Spawn slightly below to avoid dropper collision
                 
-                GameObject ball = Instantiate(RiceBallPrefab, spawnPos, Quaternion.identity);
+                GameObject ball = GetBallFromPool(spawnPos);
                 
-                // Configure Rigidbody for straight drop
-                Rigidbody rb = ball.GetComponent<Rigidbody>();
-                if (rb != null)
+                if (ball != null)
                 {
-                    rb.linearVelocity = Vector3.zero; // Start with no velocity
-                    rb.angularVelocity = Vector3.zero; // No spin
-                    rb.useGravity = true; // Ensure gravity is on
-                    
-                    // Apply drop force if configured
-                    if (DropForce > 0)
+                    Rigidbody rb = ball.GetComponent<Rigidbody>();
+                    if (rb != null && DropForce > 0)
                     {
                         rb.AddForce(Vector3.down * DropForce, ForceMode.Impulse);
                     }
@@ -167,7 +230,8 @@ namespace Vampire.DropPuzzle
             
             // Spawn ball directly below drop point (no offset to avoid dropper collision)
             Vector3 spawnPos = DropPoint.position + Vector3.down * 0.3f;
-            GameObject ball = Instantiate(RiceBallPrefab, spawnPos, Quaternion.identity);
+            GameObject ball = GetBallFromPool(spawnPos);
+            if (ball == null) return;
             
             // Configure Rigidbody for straight drop
             Rigidbody rb = ball.GetComponent<Rigidbody>();

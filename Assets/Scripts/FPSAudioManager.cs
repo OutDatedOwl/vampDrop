@@ -180,10 +180,6 @@ namespace Vampire.Player
             
             // Start background music
             PlayBackgroundMusic();
-            
-            // Debug audio clip assignments
-            Debug.Log($"[FPSAudioManager] Initialized - Walking Sound: {(walkingSound != null ? "✓" : "✗")}, Rice Sound: {(walkingOnRiceSound != null ? "✓" : "✗")}");
-            Debug.Log($"[FPSAudioManager] Audio Sources - Music: {(musicSource != null ? "✓" : "✗")}, Footstep: {(footstepSource != null ? "✓" : "✗")}, SFX: {(sfxSource != null ? "✓" : "✗")}");
         }
         
         private void OnDestroy()
@@ -260,7 +256,6 @@ namespace Vampire.Player
             {
                 musicSource.clip = backgroundMusic;
                 musicSource.Play();
-                Debug.Log("[FPSAudioManager] Background music started");
             }
         }
         
@@ -290,21 +285,15 @@ namespace Vampire.Player
             // Reduce log frequency to avoid spam
             bool shouldLog = Time.frameCount % 120 == 0;
             
-            if (shouldLog)
-            {
-                Debug.Log($"[FPSAudioManager] OnPlayerMoving called - Grounded: {isGrounded}, Running: {isRunning}, Crouching: {isCrouching}");
-            }
             
             if (!isGrounded) 
             {
-                if (shouldLog) Debug.Log("[FPSAudioManager] Player not grounded, stopping walking sound");
                 StopWalkingSound();
                 return;
             }
             
             // Player is moving and grounded
             isCurrentlyWalking = true;
-            if (shouldLog) Debug.Log("[FPSAudioManager] Player is walking and grounded");
             
             // Check what surface we're walking on
             CheckForRiceBeneathPlayer(playerPosition);
@@ -344,8 +333,6 @@ namespace Vampire.Player
             
             sfxSource.pitch = UnityEngine.Random.Range(0.95f, 1.05f); // Slight pitch variation
             sfxSource.PlayOneShot(jumpSound);
-            
-            Debug.Log("[FPSAudioManager] Played jump sound");
         }
         
         /// <summary>
@@ -357,8 +344,6 @@ namespace Vampire.Player
             
             sfxSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f); // More pitch variation for lands
             sfxSource.PlayOneShot(landSound);
-            
-            Debug.Log("[FPSAudioManager] Played land sound");
         }
         
         /// <summary>
@@ -369,7 +354,6 @@ namespace Vampire.Player
             // Only process if we were actually walking to avoid spam
             if (isCurrentlyWalking || wasWalkingLastFrame)
             {
-                Debug.Log("[FPSAudioManager] OnPlayerStopped called - was walking, now stopping");
                 isCurrentlyWalking = false;
                 StopWalkingSound();
             }
@@ -382,28 +366,23 @@ namespace Vampire.Player
         /// </summary>
         private void StartWalkingSound()
         {
-            Debug.Log($"[FPSAudioManager] StartWalkingSound called - FootstepSource null: {footstepSource == null}");
             
             if (footstepSource == null) 
             {
-                Debug.LogError("[FPSAudioManager] FootstepSource is null! Cannot play walking sound.");
                 return;
             }
             
             // Determine which sound to play
             AudioClip soundToPlay = isWalkingOnRice ? walkingOnRiceSound : walkingSound;
-            Debug.Log($"[FPSAudioManager] Surface: {(isWalkingOnRice ? "Rice" : "Ground")}, Sound clip null: {soundToPlay == null}");
-            
+
             if (soundToPlay == null) 
             {
-                Debug.LogError($"[FPSAudioManager] No audio clip assigned for {(isWalkingOnRice ? "rice" : "ground")} walking!");
                 return;
             }
             
             // If we're not already playing the correct sound, switch to it
             bool needsToStart = footstepSource.clip != soundToPlay || !footstepSource.isPlaying;
-            Debug.Log($"[FPSAudioManager] Current clip: {footstepSource.clip?.name}, Target clip: {soundToPlay.name}, IsPlaying: {footstepSource.isPlaying}, NeedsToStart: {needsToStart}");
-            
+  
             if (needsToStart)
             {
                 footstepSource.clip = soundToPlay;
@@ -412,14 +391,9 @@ namespace Vampire.Player
                 // Apply volume adjustment based on surface type
                 float volumeMultiplier = isWalkingOnRice ? riceWalkingVolumeBoost : groundWalkingVolumeBoost;
                 float finalVolume = (footstepVolume * masterVolume) * volumeMultiplier;
-                footstepSource.volume = finalVolume;
-                
-                Debug.Log($"[FPSAudioManager] Playing walking sound: {soundToPlay.name} - Volume: {finalVolume:F3} (Base: {footstepVolume:F2} × Master: {masterVolume:F2} × Boost: {volumeMultiplier:F2})");
-                
+                footstepSource.volume = finalVolume;           
                 footstepSource.Play();
                 
-                // Verify it's actually playing
-                Debug.Log($"[FPSAudioManager] After Play() - IsPlaying: {footstepSource.isPlaying}, Time: {footstepSource.time}");
             }
             else
             {
@@ -438,7 +412,6 @@ namespace Vampire.Player
             if (footstepSource != null && footstepSource.isPlaying)
             {
                 footstepSource.Stop();
-                Debug.Log($"[FPSAudioManager] Stopped walking sound: {footstepSource.clip?.name}");
             }
             else if (wasPlaying)
             {
@@ -555,25 +528,15 @@ namespace Vampire.Player
             {
                 var endTime = System.DateTime.Now;
                 var duration = (endTime - startTime).TotalMilliseconds;
-                
-                if (Time.frameCount % 120 == 0 || duration > 2.0) // Log if slow or occasionally
-                {
-                    Debug.Log($"[FPSAudioManager] Rice detection took {duration:F2}ms - Traditional: {riceObjects.Length}, ECS: {ecsRiceCount}, Total: {totalRiceCount}");
-                }
             }
             
             // Debug rice detection with detailed object info
             if (Time.frameCount % 120 == 0)
             {
-                Debug.Log($"[FPSAudioManager] Rice detection - Position: {checkPosition}, Radius: {riceDetectionRadius}");
-                Debug.Log($"[FPSAudioManager] Layer mask: {riceLayerMask.value} (targets layer {GetFirstLayerFromMask(riceLayerMask)})");
-                Debug.Log($"[FPSAudioManager] Traditional rice: {riceObjects.Length}, ECS rice: {ecsRiceCount}, Total: {totalRiceCount}/{minRiceCountForWalking}, WalkingOnRice: {isWalkingOnRice}");
-                
                 if (riceObjects.Length > 0)
                 {
                     string riceInfo = string.Join(", ", System.Array.ConvertAll(riceObjects, obj => 
                         $"{obj.name}(L{obj.gameObject.layer})"));
-                    Debug.Log($"[FPSAudioManager] Detected objects: {riceInfo}");
                 }
                 
                 // Warning if layer mask looks wrong
@@ -586,7 +549,6 @@ namespace Vampire.Player
             // If surface type changed, restart the walking sound
             if (wasWalkingOnRice != isWalkingOnRice && isCurrentlyWalking)
             {
-                Debug.Log($"[FPSAudioManager] Surface changed to {(isWalkingOnRice ? "rice" : "ground")}, restarting walking sound");
                 StartWalkingSound();
             }
             
@@ -617,12 +579,6 @@ namespace Vampire.Player
             
             var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
             var transforms = query.ToComponentDataArray<LocalTransform>(Unity.Collections.Allocator.Temp);
-            
-            // Debug: log total rice entities being checked
-            if (Time.frameCount % 300 == 0 && enablePerformanceProfiling)
-            {
-                Debug.Log($"[FPSAudioManager] Checking {entities.Length} ground rice entities for proximity");
-            }
             
             // Limit how many entities we check for performance
             int maxEntitiesToCheck = math.min(entities.Length, 2000); // Increased to 2000 for better detection
@@ -686,8 +642,6 @@ namespace Vampire.Player
             {
                 sfxSource.pitch = UnityEngine.Random.Range(0.95f, 1.05f); // Slight pitch variation
                 sfxSource.PlayOneShot(soundToPlay);
-                
-                Debug.Log($"[FPSAudioManager] Played {(isMultiPickup ? "multi-pickup" : "pickup")} sound");
             }
         }
         

@@ -155,23 +155,32 @@ namespace Vampire.DropPuzzle
                     0f                                // No Z movement
                 );
                 
-                GameObject newBall = Instantiate(RiceBallPrefab, spawnPos, Quaternion.identity);
-                
-                // Ensure physics is enabled for pushing
-                Rigidbody newRb = newBall.GetComponent<Rigidbody>();
-                if (newRb != null)
+                GameObject newBall = DropperController.Instance.GetBallFromPool(spawnPos);
+        
+                if (newBall != null)
                 {
-                    newRb.linearVelocity = Vector3.zero; // Start at rest, gravity pulls down
-                    newRb.angularVelocity = Vector3.zero;
-                    newRb.useGravity = true;
-                    newRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                    Rigidbody newRb = newBall.GetComponent<Rigidbody>();
+                    if (newRb != null)
+                    {
+                        // Reset physics state for the "reused" ball
+                        newRb.linearVelocity = Vector3.zero; 
+                        newRb.angularVelocity = Vector3.zero;
+                        newRb.useGravity = true;
+                        newRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                    }
+                    
+                    RiceBall newRiceBall = newBall.GetComponent<RiceBall>();
+                    if (newRiceBall != null)
+                    {
+                        // Crucial: Mark the new ball as having already hit THIS gate 
+                        // so it doesn't instantly trigger a multiplication loop
+                        newRiceBall.MarkGateHit(gateId);
+                    }
                 }
-                
-                // Mark this new ball as having hit THIS gate already
-                RiceBall newRiceBall = newBall.GetComponent<RiceBall>();
-                if (newRiceBall != null)
+                else
                 {
-                    newRiceBall.MarkGateHit(gateId);
+                    // If the pool is empty, we stop spawning to prevent errors
+                    break; 
                 }
             }
             

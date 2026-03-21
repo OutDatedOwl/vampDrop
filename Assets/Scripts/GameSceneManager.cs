@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Vampire.Player;
+using Unity.Entities;
 
 namespace Vampire
 {
@@ -89,46 +90,29 @@ namespace Vampire
         /// <summary>
         /// Transition from FPS stage to Drop Puzzle
         /// </summary>
-        public void TransitionToDropPuzzle()
+       public void TransitionToDropPuzzle()
         {
-            Debug.Log("[GameSceneManager] === TRANSITION STARTED ===");
-            
-            // Get collected rice count from FPS stage
-            var playerEntity = UnityEngine.Object.FindFirstObjectByType<PlayerAuthoring>();
-            Debug.Log($"[GameSceneManager] PlayerAuthoring found: {playerEntity != null}");
-            
-            if (playerEntity != null)
+            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+            if (world != null)
             {
-                // Try to get rice count from ECS
-                var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
-                Debug.Log($"[GameSceneManager] ECS World found: {world != null}");
-                
-                if (world != null)
+                var entityManager = world.EntityManager;
+
+                // Use the full path to the TAG struct defined in RiceSpawnComponents.cs
+                // This avoids the "Vampire.Rice is a namespace" conflict
+                var riceQuery = entityManager.CreateEntityQuery(new EntityQueryDesc
                 {
-                    var entityManager = world.EntityManager;
-                    var query = entityManager.CreateEntityQuery(typeof(Player.PlayerData));
-                    int playerCount = query.CalculateEntityCount();
-                    Debug.Log($"[GameSceneManager] Player entities found: {playerCount}");
-                    
-                    if (playerCount > 0)
-                    {
-                        var playerData = query.GetSingleton<Player.PlayerData>();
-                        collectedRiceCount = playerData.RiceCollected;
-                        Debug.Log($"[GameSceneManager] ✅ Collected rice count: {collectedRiceCount}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning("[GameSceneManager] No player entity found, using 0 rice");
-                    }
+                    All = new [] { ComponentType.ReadOnly<Vampire.Rice.RiceSpawned>() }, 
+                    Options = EntityQueryOptions.IncludeDisabledEntities 
+                });
+
+                if (!riceQuery.IsEmpty)
+                {
+                    // Adding the Disabled component hides them from rendering and physics systems
+                    entityManager.AddComponent<Unity.Entities.Disabled>(riceQuery);
+                    Debug.Log($"[GameSceneManager] 🧊 {riceQuery.CalculateEntityCount()} rice entities hibernated.");
                 }
             }
-            else
-            {
-                Debug.LogWarning("[GameSceneManager] No PlayerAuthoring found, using 0 rice");
-            }
-            
-            // Load drop puzzle scene
-            Debug.Log($"[GameSceneManager] Loading scene: {DropPuzzleSceneName}...");
+
             SceneManager.sceneLoaded += OnDropPuzzleSceneLoaded;
             SceneManager.LoadScene(DropPuzzleSceneName);
         }
@@ -155,6 +139,25 @@ namespace Vampire
         /// </summary>
         public void ReturnToFPS()
         {
+            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+            if (world != null)
+            {
+                var entityManager = world.EntityManager;
+                
+                var riceQuery = entityManager.CreateEntityQuery(new EntityQueryDesc
+                {
+                    All = new [] { ComponentType.ReadOnly<Vampire.Rice.RiceSpawned>() }, 
+                    Options = EntityQueryOptions.IncludeDisabledEntities 
+                });
+                // SHOW: Remove the Disabled tag
+                 if (!riceQuery.IsEmpty)
+                {
+                    // Adding the Disabled component hides them from rendering and physics systems
+                     entityManager.RemoveComponent<Unity.Entities.Disabled>(riceQuery);
+                }
+                
+                Debug.Log("[GameSceneManager] ✨ Rice entities restored.");
+            }
             SceneManager.LoadScene(FPSSceneName);
             Debug.Log("[GameSceneManager] Returning to FPS stage");
         }

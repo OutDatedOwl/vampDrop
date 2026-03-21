@@ -160,6 +160,18 @@ MonoBehaviour:
       animationDuration: 0
       panDistance: 0
       zoomScale: 0
+    - elementName: speaker
+      sprite: {fileID: 21300000, guid: c1b9e67a18dd24e4ba060b09d40841a1, type: 3}
+      layer: 2
+      sizeMode: 1
+      customSize: {x: 0, y: 0}
+      position: {x: 0, y: 0}
+      scale: 1
+      animation: 1
+      appearDelay: 1
+      animationDuration: 3
+      panDistance: 0
+      zoomScale: 0
     soundEffect: {fileID: 0}
     music: {fileID: 0}
     musicVolume: 0

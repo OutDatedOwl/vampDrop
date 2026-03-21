@@ -1042,8 +1042,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Vampire.DropPuzzle.PuzzlePrefabLoader
   PuzzlePrefabs:
-  - {fileID: 1612335730034298393, guid: da0e7472d7a7fbb45ad1d87214f7b832, type: 3}
   - {fileID: 695581116435187846, guid: c937648fee5d4184eaa4549bc383d836, type: 3}
+  - {fileID: 1612335730034298393, guid: da0e7472d7a7fbb45ad1d87214f7b832, type: 3}
   PuzzlePositionOffset: {x: 0, y: 10, z: -22.5}
   PuzzleRotation: {x: 0, y: 0, z: 0}
   PuzzleScale: {x: 1, y: 1, z: 1}

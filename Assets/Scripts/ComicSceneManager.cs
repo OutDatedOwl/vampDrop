@@ -101,7 +101,7 @@ namespace Vampire
             }
             else
             {
-                Debug.LogWarning($"[ComicScene] No panels configured! Skipping comic.");
+                // Debug.LogWarning($"[ComicScene] No panels configured! Skipping comic.");
                 CompleteComic();
             }
         }
@@ -115,17 +115,17 @@ namespace Vampire
             if (CurrentSequence != null)
             {
                 activeSequence = CurrentSequence;
-                Debug.Log($"[ComicScene] Loading sequence from static: '{activeSequence.sequenceName}' ({activeSequence.sequenceId})");
+                // Debug.Log($"[ComicScene] Loading sequence from static: '{activeSequence.sequenceName}' ({activeSequence.sequenceId})");
             }
             // Otherwise use default
             else if (defaultSequence != null)
             {
                 activeSequence = defaultSequence;
-                Debug.Log($"[ComicScene] Loading default sequence: '{activeSequence.sequenceName}' ({activeSequence.sequenceId})");
+                // Debug.Log($"[ComicScene] Loading default sequence: '{activeSequence.sequenceName}' ({activeSequence.sequenceId})");
             }
             else
             {
-                Debug.LogError("[ComicScene] No comic sequence configured! Assign CurrentSequence or defaultSequence.");
+                // Debug.LogError("[ComicScene] No comic sequence configured! Assign CurrentSequence or defaultSequence.");
                 CompleteComic();
                 return;
             }
@@ -140,10 +140,10 @@ namespace Vampire
                 musicSource.volume = activeSequence.musicVolume;
                 musicSource.loop = true;
                 musicSource.Play();
-                Debug.Log($"[ComicScene] Playing sequence music: {activeSequence.sequenceMusic.name}");
+                // Debug.Log($"[ComicScene] Playing sequence music: {activeSequence.sequenceMusic.name}");
             }
             
-            Debug.Log($"[ComicScene] Initialized '{activeSequence.sequenceName}' with {panels.Count} panels");
+            // Debug.Log($"[ComicScene] Initialized '{activeSequence.sequenceName}' with {panels.Count} panels");
             
             // Create scrolling container if it doesn't exist
             if (scrollingContainer == null)
@@ -223,7 +223,7 @@ namespace Vampire
             // Set scrolling container total width
             scrollingContainer.sizeDelta = new Vector2(currentX, 0);
             
-            Debug.Log($"[ComicScene] Created {panels.Count} panels, total width: {currentX}px");
+            // Debug.Log($"[ComicScene] Created {panels.Count} panels, total width: {currentX}px");
         }
         
         /// <summary>
@@ -235,7 +235,7 @@ namespace Vampire
             {
                 if (element.sprite == null)
                 {
-                    Debug.LogWarning($"[ComicScene] [{activeSequence?.sequenceId}] Element '{element.elementName}' has no sprite!");
+                    // Debug.LogWarning($"[ComicScene] [{activeSequence?.sequenceId}] Element '{element.elementName}' has no sprite!");
                     continue;
                 }
                 
@@ -257,7 +257,7 @@ namespace Vampire
             // Skip entire comic with ESC
             if (allowSkip && Input.GetKeyDown(KeyCode.Escape))
             {
-                Debug.Log($"[ComicScene] '{activeSequence?.sequenceName}' skipped by user");
+                // Debug.Log($"[ComicScene] '{activeSequence?.sequenceName}' skipped by user");
                 CompleteComic();
                 return;
             }
@@ -314,7 +314,7 @@ namespace Vampire
             panel.isComplete = false;
             waitingForInput = false;
             
-            Debug.Log($"[ComicScene] [{activeSequence?.sequenceId}] Scrolling to panel {index}: {panel.panelName}");
+            // Debug.Log($"[ComicScene] [{activeSequence?.sequenceId}] Scrolling to panel {index}: {panel.panelName}");
             
             // Hide continue prompt
             if (continuePrompt != null)
@@ -366,7 +366,7 @@ namespace Vampire
             
             scrollTargetPos = new Vector2(currentScrollOffset, 0);
             
-            Debug.Log($"[ComicScene] Scrolling by {panelWidth}px (total offset: {currentScrollOffset}px)");
+            // Debug.Log($"[ComicScene] Scrolling by {panelWidth}px (total offset: {currentScrollOffset}px)");
         }
         
         /// <summary>
@@ -390,11 +390,11 @@ namespace Vampire
                 {
                     // Elements with no animation are immediately ready
                     element.isAnimating = false;
-                    Debug.Log($"[ComicScene] Element '{element.elementName}' has no animation - immediately ready");
+                    // Debug.Log($"[ComicScene] Element '{element.elementName}' has no animation - immediately ready");
                 }
             }
             
-            Debug.Log($"[ComicScene] Started animations for {panel.elements.Count} elements in panel '{panel.panelName}' ({activeElements.Count} active)");
+            // Debug.Log($"[ComicScene] Started animations for {panel.elements.Count} elements in panel '{panel.panelName}' ({activeElements.Count} active)");
         }
         
         /// <summary>
@@ -422,7 +422,7 @@ namespace Vampire
             // Debug: Log animation status occasionally
             if (Time.frameCount % 60 == 0) // Every second
             {
-                Debug.Log($"[ComicScene] Panel {currentPanelIndex}: anyAnimating={anyAnimating}, waitingForInput={waitingForInput}, panelTime={panelTime:F1}s, autoDuration={panel.autoDuration}");
+                // Debug.Log($"[ComicScene] Panel {currentPanelIndex}: anyAnimating={anyAnimating}, waitingForInput={waitingForInput}, panelTime={panelTime:F1}s, autoDuration={panel.autoDuration}");
             }
             
             // Check if we should wait for input or auto-advance
@@ -443,11 +443,11 @@ namespace Vampire
                     if (continuePrompt != null && showContinuePrompt)
                     {
                         continuePrompt.gameObject.SetActive(true);
-                        Debug.Log($"[ComicScene] [{activeSequence?.sequenceId}] Panel {currentPanelIndex} '{panel.panelName}' waiting for input - CONTINUE PROMPT SHOWN");
+                        // Debug.Log($"[ComicScene] [{activeSequence?.sequenceId}] Panel {currentPanelIndex} '{panel.panelName}' waiting for input - CONTINUE PROMPT SHOWN");
                     }
                     else
                     {
-                        Debug.LogWarning($"[ComicScene] Continue prompt not shown! continuePrompt={continuePrompt != null}, showContinuePrompt={showContinuePrompt}");
+                        // Debug.LogWarning($"[ComicScene] Continue prompt not shown! continuePrompt={continuePrompt != null}, showContinuePrompt={showContinuePrompt}");
                     }
                 }
             }
@@ -461,14 +461,14 @@ namespace Vampire
                     if (element.isAnimating) stuckAnimationCount++;
                 }
                 
-                Debug.LogWarning($"[ComicScene] Forcing continue prompt after 2s - animations might be stuck. Completing {stuckAnimationCount} stuck animations");
+                // Debug.LogWarning($"[ComicScene] Forcing continue prompt after 2s - animations might be stuck. Completing {stuckAnimationCount} stuck animations");
                 
                 // Force complete all stuck animations properly
                 foreach (var element in activeElements)
                 {
                     if (element.isAnimating)
                     {
-                        Debug.LogWarning($"[ComicScene] Force completing stuck animation: {element.elementName} ({element.animation})");
+                        // Debug.LogWarning($"[ComicScene] Force completing stuck animation: {element.elementName} ({element.animation})");
                         element.isAnimating = false;
                         
                         // Set elements to their final animation state
@@ -775,7 +775,7 @@ namespace Vampire
                 }
                 // Mark as complete
                 element.isAnimating = false;
-                Debug.Log($"[ComicScene] Element '{element.elementName}' instant animation completed (duration was {element.animationDuration})");
+                // Debug.Log($"[ComicScene] Element '{element.elementName}' instant animation completed (duration was {element.animationDuration})");
                 return;
             }
             
@@ -819,7 +819,7 @@ namespace Vampire
             if (t >= 1f)
             {
                 element.isAnimating = false;
-                Debug.Log($"[ComicScene] Element '{element.elementName}' animation completed after {(Time.time - element.animationStartTime):F1}s");
+                // Debug.Log($"[ComicScene] Element '{element.elementName}' animation completed after {(Time.time - element.animationStartTime):F1}s");
                 
                 // Clean up curtain bars
                 if (element.curtainLeft != null)
@@ -909,7 +909,7 @@ namespace Vampire
             comicComplete = true;
             
             string nextScene = activeSequence != null ? activeSequence.nextSceneName : "FPS_Collect";
-            Debug.Log($"[ComicScene] '{activeSequence?.sequenceName}' complete! Loading scene: {nextScene}");
+            // Debug.Log($"[ComicScene] '{activeSequence?.sequenceName}' complete! Loading scene: {nextScene}");
             
             // Stop music
             if (musicSource != null)
@@ -972,7 +972,7 @@ namespace Vampire
             // Add pulsing animation effect
             var pulseAnim = promptGO.AddComponent<ContinuePromptPulse>();
             
-            Debug.Log($"[ComicScene] Created default canvas");
+            // Debug.Log($"[ComicScene] Created default canvas");
         }
     }
 }

@@ -16374,6 +16374,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2067930713}
   - component: {fileID: 2067930712}
+  - component: {fileID: 2067930714}
   m_Layer: 0
   m_Name: RiceSpawner
   m_TagString: Untagged
@@ -16393,9 +16394,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8f56999a42a15740bdf1b058a3cf397, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Vampire.Rice.RiceSpawnerAuthoring
-  RicePrefab: {fileID: 2681448709607039932, guid: 6d2b6f005a546014cbf22bbda8a092df, type: 3}
-  Count: 0
-  Seed: 1
 --- !u!4 &2067930713
 Transform:
   m_ObjectHideFlags: 0
@@ -16411,6 +16409,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2067930714
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2067930711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef3e2ef259de29a469dd455b947cdef7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Vampire.Rice.RiceSpawnerAuthoring
+  RicePrefab: {fileID: 2681448709607039932, guid: 6d2b6f005a546014cbf22bbda8a092df, type: 3}
+  Count: 100000
+  Seed: 1
 --- !u!1001 &2068888237
 PrefabInstance:
   m_ObjectHideFlags: 0

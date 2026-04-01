@@ -8,6 +8,7 @@ namespace Vampire.Rice
         public Entity Prefab;
         public int Count;
         public uint Seed;
+        public float Scale;
     }
 
     public struct RiceSpawned : IComponentData

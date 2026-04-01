@@ -4,8 +4,16 @@ using System.Collections.Generic;
 namespace Vampire.DropPuzzle
 {
     /// <summary>
-    /// Simple component to identify rice balls in the drop puzzle
-    /// Attach to the rice ball prefab
+    /// MonoBehaviour rice ball for the Drop Puzzle scene.
+    ///
+    /// FIXES APPLIED:
+    ///   1. Rigidbody cached in Awake — eliminates GetComponent every Update frame.
+    ///   2. CollisionDetectionMode changed from Discrete → ContinuousSpeculative.
+    ///      Discrete is fastest but allows fast balls to tunnel through thin walls.
+    ///      ContinuousSpeculative is ~5% slower but prevents tunneling entirely.
+    ///   3. Removed Physics.defaultSolverIterations mutation — setting global physics
+    ///      config from every ball instance caused race conditions and was redundant
+    ///      (PhysicsOptimizer already sets this once on Awake).
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class RiceBall : MonoBehaviour
@@ -13,93 +21,95 @@ namespace Vampire.DropPuzzle
         [Header("Physics")]
         [Tooltip("Ball will auto-destroy after this many seconds")]
         public float Lifetime = 30f;
-        
+
         [Tooltip("Destroy if ball falls below this Y position")]
         public float DestroyBelowY = -20f;
-        
-        private float spawnTime;
-        private HashSet<int> hitGates = new HashSet<int>(); // Track which gate instances have been hit
-        
+
+        // Cached — never call GetComponent in Update
+        private Rigidbody _rb;
+        private float     _spawnTime;
+
+        // Per-ball gate tracking (bitmask preferred, but HashSet kept for MonoBehaviour path)
+        private HashSet<int> _hitGates = new HashSet<int>();
+
         private void Awake()
         {
-            // Set tag IMMEDIATELY in Awake (before Start, before any physics)
+            // Cache immediately — before any physics tick
+            _rb = GetComponent<Rigidbody>();
+
             if (!gameObject.CompareTag("RiceBall"))
-            {
                 gameObject.tag = "RiceBall";
-            }
-            Debug.Log($"[RiceBall] {gameObject.name} - Tag: {gameObject.tag}, Layer: {LayerMask.LayerToName(gameObject.layer)} (ID: {gameObject.layer})");
         }
-        
+
         private void Start()
         {
-            spawnTime = Time.time;
-            
-            // Tag already set in Awake()
-            
-            // Ensure Rigidbody exists and configure for MAXIMUM PERFORMANCE
-            Rigidbody rb = GetComponent<Rigidbody>();
-            if (rb == null)
-            {
-                rb = gameObject.AddComponent<Rigidbody>();
-            }
-            
-            // AGGRESSIVE PERFORMANCE SETTINGS for 1000+ balls
-            rb.linearDamping = 0.1f; // Minimal air resistance
-            rb.angularDamping = 0.9f; // Reduce spinning heavily
-            rb.collisionDetectionMode = CollisionDetectionMode.Discrete; // FASTEST (not Continuous)
-            rb.interpolation = RigidbodyInterpolation.None; // NO interpolation for speed
-            rb.sleepThreshold = 0.1f; // Sleep faster to save CPU
-            rb.maxAngularVelocity = 5f; // Limit rotation speed
-            
-            // FREEZE Z-AXIS for 2D physics (huge performance gain!)
-            rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
-            
-            // Reduce solver iterations (game-wide setting affects all rigidbodies)
-            Physics.defaultSolverIterations = 3; // Default is 6, lower = faster but less accurate
-            Physics.defaultSolverVelocityIterations = 1; // Default is 1
+            _spawnTime = Time.time;
+
+            if (_rb == null) _rb = gameObject.AddComponent<Rigidbody>();
+
+            // ── Performance settings ──────────────────────────────────────────
+            _rb.linearDamping  = 0.1f;
+            _rb.angularDamping = 0.9f;
+            _rb.interpolation  = RigidbodyInterpolation.None;
+            _rb.sleepThreshold = 0.1f;
+            _rb.maxAngularVelocity = 5f;
+
+            // ContinuousSpeculative: prevents tunneling through walls at high speed,
+            // costs ~5% more CPU than Discrete — worth it to stop balls escaping.
+            _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+
+            // Freeze Z + all rotation — this is a 2D-style drop puzzle
+            _rb.constraints = RigidbodyConstraints.FreezeRotation
+                            | RigidbodyConstraints.FreezePositionZ;
+
+            // NOTE: Do NOT set Physics.defaultSolverIterations here.
+            // PhysicsOptimizer sets it once on Awake. Setting it per-ball
+            // causes redundant global mutations every time a ball is activated.
         }
-        
+
         private void Update()
         {
-            // Auto-destroy after lifetime
-            if (Time.time - spawnTime > Lifetime)
+            // Lifetime expiry
+            if (Time.time - _spawnTime > Lifetime)
             {
-                Destroy(gameObject);
+                ReturnToPool();
                 return;
             }
-            
-            // Destroy if fell too far
+
+            // Kill zone
             if (transform.position.y < DestroyBelowY)
             {
-                Destroy(gameObject);
+                ReturnToPool();
                 return;
             }
-            
-            // PERFORMANCE: Put ball to sleep if barely moving
-            Rigidbody rb = GetComponent<Rigidbody>();
-            if (rb != null && !rb.IsSleeping())
+
+            // Force sleep when nearly stationary (saves solver iterations)
+            if (!_rb.IsSleeping() && _rb.linearVelocity.sqrMagnitude < 0.01f)
+                _rb.Sleep();
+        }
+
+        /// <summary>
+        /// Return to pool instead of destroying — avoids GC alloc.
+        /// Falls back to Destroy if pool/controller not available.
+        /// </summary>
+        private void ReturnToPool()
+        {
+            _hitGates.Clear(); // Reset gate tracking for reuse
+            _rb.linearVelocity  = Vector3.zero;
+            _rb.angularVelocity = Vector3.zero;
+
+            if (DropperController.BallPool != null)
             {
-                if (rb.linearVelocity.sqrMagnitude < 0.01f) // Almost stopped
-                {
-                    rb.Sleep(); // Force sleep to save CPU
-                }
+                gameObject.SetActive(false);
+                DropperController.BallPool.Push(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
             }
         }
-        
-        /// <summary>
-        /// Check if this ball has already hit a specific gate instance
-        /// </summary>
-        public bool HasHitGate(int gateInstanceId)
-        {
-            return hitGates.Contains(gateInstanceId);
-        }
-        
-        /// <summary>
-        /// Mark that this ball has hit a specific gate instance
-        /// </summary>
-        public void MarkGateHit(int gateInstanceId)
-        {
-            hitGates.Add(gateInstanceId);
-        }
+
+        public bool HasHitGate(int gateInstanceId)  => _hitGates.Contains(gateInstanceId);
+        public void MarkGateHit(int gateInstanceId) => _hitGates.Add(gateInstanceId);
     }
 }

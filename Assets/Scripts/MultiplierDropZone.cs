@@ -40,11 +40,11 @@ namespace Vampire.DropPuzzle
             if (col != null)
             {
                 col.isTrigger = true; // Ensure it's a trigger
-                Debug.Log($"[MultiplierDropZone] {name} setup as {Multiplier}x zone (trigger={col.isTrigger})");
+                // Debug.Log($"[MultiplierDropZone] {name} setup as {Multiplier}x zone (trigger={col.isTrigger})");
             }
             else
             {
-                Debug.LogError($"[MultiplierDropZone] {name} is missing a Collider component!");
+                // Debug.LogError($"[MultiplierDropZone] {name} is missing a Collider component!");
             }
         }
         
@@ -88,7 +88,7 @@ namespace Vampire.DropPuzzle
             // Check if a rice ball entered
             if (other.CompareTag("RiceBall") || other.name.Contains("RiceBall"))
             {
-                Debug.Log($"[MultiplierDropZone] Rice ball entered {Multiplier}x zone!");
+                // Debug.Log($"[MultiplierDropZone] Rice ball entered {Multiplier}x zone!");
                 
                 // TODO: Apply multiplier to ball scoring
                 // You can add a component to the ball or send a message here

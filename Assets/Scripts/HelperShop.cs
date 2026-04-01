@@ -49,7 +49,7 @@ namespace Vampire.Helpers
                 shopUI.SetActive(false);
             }
             
-            Debug.Log($"[HelperShop] {merchantName} is ready for business!");
+            // Debug.Log($"[HelperShop] {merchantName} is ready for business!");
         }
         
         private void OnTriggerEnter(Collider other)
@@ -99,7 +99,7 @@ namespace Vampire.Helpers
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             
-            Debug.Log($"[HelperShop] Opened {merchantName}'s shop");
+            // Debug.Log($"[HelperShop] Opened {merchantName}'s shop");
         }
         
         public void CloseShop()
@@ -117,7 +117,7 @@ namespace Vampire.Helpers
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             
-            Debug.Log($"[HelperShop] Closed {merchantName}'s shop");
+            // Debug.Log($"[HelperShop] Closed {merchantName}'s shop");
         }
         
         public bool IsShopAvailable()
@@ -136,7 +136,7 @@ namespace Vampire.Helpers
         {
             if (requireTutorialComplete && !playerData.TutorialCompleted)
             {
-                Debug.Log($"[HelperShop] {merchantName}: 'Complete the tutorial first, then come back!'");
+                // Debug.Log($"[HelperShop] {merchantName}: 'Complete the tutorial first, then come back!'");
             }
         }
         
@@ -158,20 +158,20 @@ namespace Vampire.Helpers
         {
             if (playerData == null)
             {
-                Debug.LogError("[HelperShop] PlayerData not available");
+                // Debug.LogError("[HelperShop] PlayerData not available");
                 return false;
             }
             
             if (playerData.TotalCurrency < price)
             {
-                Debug.Log($"[HelperShop] Not enough currency! Need {price}, have {playerData.TotalCurrency}");
+                // Debug.Log($"[HelperShop] Not enough currency! Need {price}, have {playerData.TotalCurrency}");
                 ShowInsufficientFundsMessage(type, price);
                 return false;
             }
             
             if (!CanPurchaseHelper(type))
             {
-                Debug.Log($"[HelperShop] Cannot purchase more {type}s (stock limit reached)");
+                // Debug.Log($"[HelperShop] Cannot purchase more {type}s (stock limit reached)");
                 return false;
             }
             
@@ -190,11 +190,11 @@ namespace Vampire.Helpers
                 
                 OnHelperPurchased?.Invoke(type);
                 
-                Debug.Log($"[HelperShop] Purchased {type} helper! Owned: Goblins={playerData.Helpers.ownedGoblins}, Ghouls={playerData.Helpers.ownedGhouls}");
+                // Debug.Log($"[HelperShop] Purchased {type} helper! Owned: Goblins={playerData.Helpers.ownedGoblins}, Ghouls={playerData.Helpers.ownedGhouls}");
                 return true;
             }
             
-            Debug.LogError($"[HelperShop] Failed to spend currency for {type} purchase");
+            // Debug.LogError($"[HelperShop] Failed to spend currency for {type} purchase");
             return false;
         }
         
@@ -235,7 +235,7 @@ namespace Vampire.Helpers
         private void ShowInsufficientFundsMessage(DropPuzzle.HelperType type, int price)
         {
             int needed = price - playerData.TotalCurrency;
-            Debug.Log($"[HelperShop] {merchantName}: 'You need {needed} more currency to buy a {type} helper!'");
+            // Debug.Log($"[HelperShop] {merchantName}: 'You need {needed} more currency to buy a {type} helper!'");
         }
         
         #endregion
@@ -254,7 +254,7 @@ namespace Vampire.Helpers
                 
                 OnUpgradePurchased?.Invoke("efficiency");
                 
-                Debug.Log($"[HelperShop] Purchased efficiency upgrade! New rate: {playerData.Helpers.ricePerSecond:F1} rice/second");
+                // Debug.Log($"[HelperShop] Purchased efficiency upgrade! New rate: {playerData.Helpers.ricePerSecond:F1} rice/second");
                 return true;
             }
             
@@ -273,7 +273,7 @@ namespace Vampire.Helpers
                 
                 OnUpgradePurchased?.Invoke("capacity");
                 
-                Debug.Log($"[HelperShop] Purchased capacity upgrade! Max helpers: {playerData.Helpers.GetMaxHelpers()}");
+                // Debug.Log($"[HelperShop] Purchased capacity upgrade! Max helpers: {playerData.Helpers.GetMaxHelpers()}");
                 return true;
             }
             
@@ -291,21 +291,21 @@ namespace Vampire.Helpers
                 {
                     case "auto_scavenge":
                         playerData.Helpers.hasAutoScavenge = true;
-                        Debug.Log("[HelperShop] Unlocked Auto-Scavenge! Helpers work when offline.");
+                        // Debug.Log("[HelperShop] Unlocked Auto-Scavenge! Helpers work when offline.");
                         break;
                         
                     case "helper_storage":
                         playerData.Helpers.hasHelperStorage = true;
-                        Debug.Log("[HelperShop] Unlocked Helper Storage! Helpers can store rice before returning.");
+                        // Debug.Log("[HelperShop] Unlocked Helper Storage! Helpers can store rice before returning.");
                         break;
                         
                     case "call_helpers":
                         playerData.Helpers.canCallHelpers = true;
-                        Debug.Log("[HelperShop] Unlocked Call Helpers! Summon all helpers to your location.");
+                        // Debug.Log("[HelperShop] Unlocked Call Helpers! Summon all helpers to your location.");
                         break;
                         
                     default:
-                        Debug.LogWarning($"[HelperShop] Unknown ability type: {abilityType}");
+                        // Debug.LogWarning($"[HelperShop] Unknown ability type: {abilityType}");
                         return false;
                 }
                 
@@ -358,14 +358,14 @@ namespace Vampire.Helpers
         {
             var info = GetShopInfo();
             
-            Debug.Log($"=== {merchantName} Shop Status ===");
-            Debug.Log($"Player Currency: {info.playerCurrency}");
-            Debug.Log($"Owned Helpers: {info.ownedGoblins} Goblins, {info.ownedGhouls} Ghouls");
-            Debug.Log($"Deployed: {info.deployedHelpers}/{info.maxHelpers}");
-            Debug.Log($"Efficiency: {info.currentEfficiency:F1} rice/second");
-            Debug.Log($"Goblin Price: {info.goblinPrice} (Stock: {info.goblinStock})");
-            Debug.Log($"Ghoul Price: {info.ghoulPrice} (Stock: {info.ghoulStock})");
-            Debug.Log("==============================");
+            // Debug.Log($"=== {merchantName} Shop Status ===");
+            // Debug.Log($"Player Currency: {info.playerCurrency}");
+            // Debug.Log($"Owned Helpers: {info.ownedGoblins} Goblins, {info.ownedGhouls} Ghouls");
+            // Debug.Log($"Deployed: {info.deployedHelpers}/{info.maxHelpers}");
+            // Debug.Log($"Efficiency: {info.currentEfficiency:F1} rice/second");
+            // Debug.Log($"Goblin Price: {info.goblinPrice} (Stock: {info.goblinStock})");
+            // Debug.Log($"Ghoul Price: {info.ghoulPrice} (Stock: {info.ghoulStock})");
+            // Debug.Log("==============================");
         }
         
         #endregion

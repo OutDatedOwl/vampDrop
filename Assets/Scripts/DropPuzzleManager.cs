@@ -24,16 +24,16 @@ namespace Vampire.DropPuzzle
         
         private void Awake()
         {
-            Debug.Log("[DropPuzzleManager] Awake called");
+            // Debug.Log("[DropPuzzleManager] Awake called");
             
             if (instance == null)
             {
                 instance = this;
-                Debug.Log($"[DropPuzzleManager] Instance created with {RiceBallsAvailable} rice balls (default)");
+                // Debug.Log($"[DropPuzzleManager] Instance created with {RiceBallsAvailable} rice balls (default)");
             }
             else
             {
-                Debug.LogWarning("[DropPuzzleManager] Duplicate instance, destroying");
+                // Debug.LogWarning("[DropPuzzleManager] Duplicate instance, destroying");
                 Destroy(gameObject);
                 return;
             }
@@ -41,7 +41,7 @@ namespace Vampire.DropPuzzle
         
         private void Start()
         {
-            Debug.Log($"[DropPuzzleManager] Start - RiceBallsAvailable = {RiceBallsAvailable}");
+            // Debug.Log($"[DropPuzzleManager] Start - RiceBallsAvailable = {RiceBallsAvailable}");
         }
         
         /// <summary>
@@ -51,12 +51,12 @@ namespace Vampire.DropPuzzle
         {
             if (RiceBallsAvailable <= 0)
             {
-                Debug.Log("[DropPuzzleManager] No rice balls left to drop!");
+                // Debug.Log("[DropPuzzleManager] No rice balls left to drop!");
                 return false;
             }
             
             RiceBallsAvailable--;
-            Debug.Log($"[DropPuzzleManager] Dropped ball! {RiceBallsAvailable} remaining");
+            // Debug.Log($"[DropPuzzleManager] Dropped ball! {RiceBallsAvailable} remaining");
             return true;
         }
         
@@ -74,9 +74,9 @@ namespace Vampire.DropPuzzle
         /// </summary>
         public void LoadFromFPSStage(int collectedRice)
         {
-            Debug.Log($"[DropPuzzleManager] ✅ LoadFromFPSStage called! Setting RiceBallsAvailable from {RiceBallsAvailable} to {collectedRice}");
+            // Debug.Log($"[DropPuzzleManager] ✅ LoadFromFPSStage called! Setting RiceBallsAvailable from {RiceBallsAvailable} to {collectedRice}");
             RiceBallsAvailable = collectedRice;
-            Debug.Log($"[DropPuzzleManager] Confirmed: RiceBallsAvailable is now {RiceBallsAvailable}");
+            // Debug.Log($"[DropPuzzleManager] Confirmed: RiceBallsAvailable is now {RiceBallsAvailable}");
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Vampire.Helpers
         public BoxCollider deploymentBounds;
         
         [Header("Debug")]
-        public bool showDebugInfo = true;
+        public bool showDebugInfo = false;
         
         // Static tracking
         private static Dictionary<string, ZoneManager> allZones = new Dictionary<string, ZoneManager>();

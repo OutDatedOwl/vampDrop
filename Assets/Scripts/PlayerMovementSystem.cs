@@ -21,7 +21,7 @@ namespace Vampire.Player
         {
             if (!hasLoggedOnce)
             {
-                UnityEngine.Debug.Log("[PlayerMovementSystem] System is running!");
+                UnityEngine.// Debug.Log("[PlayerMovementSystem] System is running!");
                 hasLoggedOnce = true;
             }
 
@@ -34,7 +34,7 @@ namespace Vampire.Player
 
             if (math.lengthsq(moveDirection) > 0.01f && !hasLoggedOnce)
             {
-                UnityEngine.Debug.Log($"[PlayerMovementSystem] Input detected: H={horizontal}, V={vertical}");
+                UnityEngine.// Debug.Log($"[PlayerMovementSystem] Input detected: H={horizontal}, V={vertical}");
             }
             
             foreach (var (transform, player) in SystemAPI.Query<RefRW<LocalTransform>, RefRO<PlayerData>>())
@@ -51,7 +51,7 @@ namespace Vampire.Player
                     var movement = (right * moveDirection.x + forward * moveDirection.z) * player.ValueRO.MoveSpeed * deltaTime;
                     transform.ValueRW.Position += movement;
                     
-                    UnityEngine.Debug.Log($"[PlayerMovementSystem] Moving to {transform.ValueRO.Position}");
+                    UnityEngine.// Debug.Log($"[PlayerMovementSystem] Moving to {transform.ValueRO.Position}");
                 }
             }
         }

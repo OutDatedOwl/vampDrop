@@ -58,12 +58,12 @@ namespace Vampire.DropPuzzle
             if (DropPoint == null)
             {
                 DropPoint = transform;
-                Debug.LogWarning("[DropperController] No DropPoint assigned, using this transform");
+                // Debug.LogWarning("[DropperController] No DropPoint assigned, using this transform");
             }
             
             if (RiceBallPrefab == null)
             {
-                Debug.LogError("[DropperController] ❌ No RiceBallPrefab assigned! Assign a prefab with Rigidbody");
+                // Debug.LogError("[DropperController] ❌ No RiceBallPrefab assigned! Assign a prefab with Rigidbody");
             }
             else
             {
@@ -71,39 +71,49 @@ namespace Vampire.DropPuzzle
                 var riceBallComponent = RiceBallPrefab.GetComponent<RiceBall>();
                 if (riceBallComponent == null)
                 {
-                    Debug.LogError($"[DropperController] ❌ RiceBall prefab '{RiceBallPrefab.name}' is MISSING RiceBall component! Add it to the prefab.");
+                    // Debug.LogError($"[DropperController] ❌ RiceBall prefab '{RiceBallPrefab.name}' is MISSING RiceBall component! Add it to the prefab.");
                 }
                 
                 var rb = RiceBallPrefab.GetComponent<Rigidbody>();
                 if (rb == null)
                 {
-                    Debug.LogWarning($"[DropperController] RiceBall prefab '{RiceBallPrefab.name}' missing Rigidbody (will be added at runtime)");
+                    // Debug.LogWarning($"[DropperController] RiceBall prefab '{RiceBallPrefab.name}' missing Rigidbody (will be added at runtime)");
                 }
                 
                 var col = RiceBallPrefab.GetComponent<Collider>();
                 if (col == null)
                 {
-                    Debug.LogError($"[DropperController] ❌ RiceBall prefab '{RiceBallPrefab.name}' is MISSING Collider! Add a SphereCollider.");
+                    // Debug.LogError($"[DropperController] ❌ RiceBall prefab '{RiceBallPrefab.name}' is MISSING Collider! Add a SphereCollider.");
                 }
             }
 
             if (RiceBallPrefab == null) return;
 
             int poolSize = CalculateMaxPotentialBalls();
-            Debug.Log($"[DropperPool] Pre-warming pool with {poolSize} balls");
+            // Debug.Log($"[DropperPool] Pre-warming pool with {poolSize} balls");
 
             // CLEAR the pool first in case of scene reloads
             BallPool.Clear();
 
             for (int i = 0; i < poolSize; i++)
             {
-                // We MUST use Instantiate here to create the initial objects
                 GameObject ball = Instantiate(RiceBallPrefab);
+
+                // Set ContinuousSpeculative at pool creation time so every ball
+                // starts with the correct mode — not just when Start() fires.
+                var rb = ball.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+                    rb.constraints = RigidbodyConstraints.FreezeRotation
+                                   | RigidbodyConstraints.FreezePositionZ;
+                }
+
                 ball.SetActive(false);
                 BallPool.Push(ball);
             }
             
-            Debug.Log("[DropperController] Ready! Press SPACE to drop rice balls");
+            // Debug.Log("[DropperController] Ready! Press SPACE to drop rice balls");
         }
         
         private void Update()
@@ -137,7 +147,7 @@ namespace Vampire.DropPuzzle
                 return ball;
             }
             
-            Debug.LogWarning("[DropperController] Pool Exhausted! Consider increasing pool size.");
+            // Debug.LogWarning("[DropperController] Pool Exhausted! Consider increasing pool size.");
             return null; 
         }
         
@@ -189,7 +199,7 @@ namespace Vampire.DropPuzzle
             isDropping = true;
             hasDropped = true;
             
-            Debug.Log("[DropperController] Dropping all balls!");
+            // Debug.Log("[DropperController] Dropping all balls!");
             
             int ballsToDrop = DropPuzzleManager.Instance.RiceBallsAvailable;
             
@@ -217,7 +227,7 @@ namespace Vampire.DropPuzzle
                 yield return new WaitForSeconds(DropInterval);
             }
             
-            Debug.Log($"[DropperController] Finished dropping {ballsToDrop} balls!");
+            // Debug.Log($"[DropperController] Finished dropping {ballsToDrop} balls!");
         }
         
         private void TryDropBall()

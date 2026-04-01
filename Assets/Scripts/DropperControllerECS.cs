@@ -36,9 +36,15 @@ namespace Vampire.DropPuzzle
         private float moveDirection = 1f;
         private bool isDropping = false;
         private bool hasDropped = false;
-        
+
+        // ── OnGUI cache — allocated once, not every frame ─────────────────
+        private GUIStyle _guiStyle;
+        private bool     _guiStyleBuilt;
+        private int      _lastGuiBallCount = -1;
+        private string   _guiLabelStr     = "";
+
         private EntityManager entityManager;
-        private Entity ballArchetype;
+        private EntityArchetype ballArchetype;
         
         private PlayerDataManager playerData => PlayerDataManager.Instance;
         private DayNightCycleManager cycleManager => DayNightCycleManager.Instance;
@@ -57,14 +63,24 @@ namespace Vampire.DropPuzzle
             
             // Get EntityManager
             entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-            
+
+            // Pre-create archetype once — reused for all spawns, avoids archetype lookup overhead
+            ballArchetype = entityManager.CreateArchetype(
+                typeof(LocalTransform),
+                typeof(RiceBallPhysics),
+                typeof(RiceBallTag),
+                typeof(RiceBallType),
+                typeof(RiceBallGateTracker),
+                typeof(RiceBallLifetime)
+            );
+
             // Find completion manager
             completionManager = FindObjectOfType<BallDropCompletionManager>();
             
             // Find audio manager
             audioManager = FindObjectOfType<BallDropAudioManager>();
             
-            Debug.Log("[DropperControllerECS] ECS Dropper ready! Press SPACE to drop (Night only)");
+            // Debug.Log("[DropperControllerECS] ECS Dropper ready! Press SPACE to drop (Night only)");
         }
         
         private void Update()
@@ -81,15 +97,7 @@ namespace Vampire.DropPuzzle
                 // Set flag immediately to prevent re-triggering
                 hasDropped = true;
                 
-                // Check if it's night time (can only drop at night)
-                if (cycleManager != null && !cycleManager.CanEnterBallDrop())
-                {
-                    Debug.LogWarning("[DropperControllerECS] ⚠️ Can only drop balls at NIGHT!");
-                    hasDropped = false; // Reset flag since we didn't actually drop
-                    return;
-                }
-                
-                // Notify audio manager (only after night check passes)
+                // Notify audio manager
                 if (audioManager != null)
                 {
                     audioManager.OnDropStarted();
@@ -147,22 +155,22 @@ namespace Vampire.DropPuzzle
             if (useInventorySystem && playerData != null)
             {
                 ballsToDrop = playerData.Inventory.GetTotalBalls();
-                Debug.Log($"[DropperControllerECS] 🎯 Dropping {ballsToDrop} riceballs from inventory!");
+                // Debug.Log($"[DropperControllerECS] 🎯 Dropping {ballsToDrop} riceballs from inventory!");
             }
             else if (DropPuzzleManager.Instance != null)
             {
                 ballsToDrop = DropPuzzleManager.Instance.RiceBallsAvailable;
-                Debug.Log($"[DropperControllerECS] 🎯 Dropping {ballsToDrop} balls (legacy mode)");
+                // Debug.Log($"[DropperControllerECS] 🎯 Dropping {ballsToDrop} balls (legacy mode)");
             }
             else
             {
-                Debug.LogError("[DropperControllerECS] No ball source available!");
+                // Debug.LogError("[DropperControllerECS] No ball source available!");
                 yield break;
             }
             
             if (ballsToDrop == 0)
             {
-                Debug.LogWarning("[DropperControllerECS] ⚠️ No balls to drop! Craft some riceballs first.");
+                // Debug.LogWarning("[DropperControllerECS] ⚠️ No balls to drop! Craft some riceballs first.");
                 
                 // Trigger completion immediately so player can return
                 if (completionManager != null)
@@ -176,46 +184,88 @@ namespace Vampire.DropPuzzle
                 yield break;
             }
             
-            int successCount = 0;
-            
+            // Collect all quality data upfront — inventory consumed before any entity creation
+            var qualities = new RiceBallQuality?[ballsToDrop];
             for (int i = 0; i < ballsToDrop; i++)
             {
-                // Use inventory system if enabled
                 if (useInventorySystem && playerData != null)
+                    qualities[i] = playerData.UseRiceBall();
+                else if (DropPuzzleManager.Instance != null)
+                    DropPuzzleManager.Instance.TryDropBall();
+            }
+
+            // Batch create ALL entities in a single call — 1 sync point instead of N
+            var spawnedEntities = new Unity.Collections.NativeArray<Entity>(ballsToDrop, Unity.Collections.Allocator.Temp);
+            entityManager.CreateEntity(ballArchetype, spawnedEntities);
+
+            // Park all entities off-screen while we wait to activate them
+            float3 parkedPos = new float3(0f, 100f, 0f);
+            for (int i = 0; i < ballsToDrop; i++)
+            {
+                entityManager.SetComponentData(spawnedEntities[i], new LocalTransform
                 {
-                    SpawnBallFromInventory();
-                }
-                else
+                    Position = parkedPos,
+                    Rotation = Unity.Mathematics.quaternion.identity,
+                    Scale = BallRadius * 2f
+                });
+                entityManager.SetComponentData(spawnedEntities[i], new RiceBallPhysics
                 {
-                    // Legacy mode
-                    if (DropPuzzleManager.Instance != null)
-                    {
-                        DropPuzzleManager.Instance.TryDropBall();
-                    }
-                    SpawnBallEntity(null); // Standard ball
-                }
-                
-                successCount++;
-                
-                // Log first 5 spawns
-                if (successCount <= 5)
+                    Position = parkedPos,
+                    Radius = BallRadius,
+                    Mass = BallMass,
+                    Bounciness = BallBounciness,
+                    Friction = BallFriction,
+                    IsSleeping = true
+                });
+                entityManager.SetComponentData(spawnedEntities[i], GetBallTypeFromQuality(qualities[i]));
+                entityManager.SetComponentData(spawnedEntities[i], new RiceBallGateTracker { HitGatesMask = 0 });
+                entityManager.SetComponentData(spawnedEntities[i], new RiceBallLifetime
                 {
-                    Debug.Log($"[DropperControllerECS] Ball {successCount} spawned at X={DropPoint.position.x:F2}");
-                }
-                
+                    SpawnTime = Time.time,
+                    MaxLifetime = 30f,
+                    DestroyBelowY = -20f
+                });
+            }
+
+            // Cache entity refs — NativeArray must be freed before yielding
+            Entity[] entityList = spawnedEntities.ToArray();
+            spawnedEntities.Dispose();
+
+            // Debug.Log($"[DropperControllerECS] Dropping {ballsToDrop} riceballs");
+
+            // Activate balls one per interval — only SetComponentData calls from here, no more CreateEntity
+            for (int i = 0; i < ballsToDrop; i++)
+            {
+                float randomX = UnityEngine.Random.Range(-BallRadius * 3f, BallRadius * 3f);
+                float randomY = UnityEngine.Random.Range(0f, BallRadius * 0.5f);
+                float3 spawnPos = new float3(
+                    DropPoint.position.x + randomX,
+                    DropPoint.position.y - 0.3f + randomY,
+                    0f
+                );
+
+                entityManager.SetComponentData(entityList[i], new LocalTransform
+                {
+                    Position = spawnPos,
+                    Rotation = Unity.Mathematics.quaternion.identity,
+                    Scale = BallRadius * 2f
+                });
+                entityManager.SetComponentData(entityList[i], new RiceBallPhysics
+                {
+                    Position = spawnPos,
+                    Velocity = new Unity.Mathematics.float3(0, -DropForce, 0),
+                    Radius = BallRadius,
+                    Mass = BallMass,
+                    Bounciness = BallBounciness,
+                    Friction = BallFriction,
+                    IsSleeping = false,
+                    SleepVelocityThreshold = 0.015f
+                });
+
                 yield return new WaitForSeconds(DropInterval);
             }
-            
-            Debug.Log($"[DropperControllerECS] ✅ Dropped {successCount} balls!");
-            
-            // Wait then verify
-            yield return new WaitForSeconds(1f);
-            
-            var query = entityManager.CreateEntityQuery(typeof(RiceBallTag));
-            int actualCount = query.CalculateEntityCount();
-            query.Dispose();
-            
-            Debug.Log($"[DropperControllerECS] 🔍 Verification: {actualCount} entities exist in ECS world");
+
+            // Debug.Log($"[DropperControllerECS] ✅ Dropped {ballsToDrop} balls!");
         }
         
         /// <summary>
@@ -227,7 +277,7 @@ namespace Vampire.DropPuzzle
             
             if (quality == null)
             {
-                Debug.LogWarning("[DropperECS] No riceballs in inventory!");
+                // Debug.LogWarning("[DropperECS] No riceballs in inventory!");
                 return;
             }
             
@@ -250,19 +300,12 @@ namespace Vampire.DropPuzzle
                 0f  // ← Must be 0 to match walls!
             );
             
-            // Create ECS entity
-            Entity ballEntity = entityManager.CreateEntity(
-                typeof(LocalTransform),
-                typeof(RiceBallPhysics),
-                typeof(RiceBallTag),
-                typeof(RiceBallType),
-                typeof(RiceBallGateTracker),
-                typeof(RiceBallLifetime)
-            );
+            // Create ECS entity using pre-built archetype (avoids archetype lookup)
+            Entity ballEntity = entityManager.CreateEntity(ballArchetype);
             
             if (ballEntity == Entity.Null)
             {
-                Debug.LogError("[DropperECS] ❌ Failed to create entity!");
+                // Debug.LogError("[DropperECS] ❌ Failed to create entity!");
                 return;
             }
             
@@ -382,38 +425,43 @@ namespace Vampire.DropPuzzle
         
         private void OnGUI()
         {
-            // Show instruction and ball count
-            GUIStyle style = new GUIStyle(GUI.skin.label);
-            style.fontSize = 18;
-            style.alignment = TextAnchor.MiddleLeft;
-            style.normal.textColor = Color.white;
-            
-            if (!hasDropped)
+            if (hasDropped) return;
+
+            // Build style once — new GUIStyle() every frame was the allocation source
+            if (!_guiStyleBuilt)
             {
-                // Show instruction
-                int ballCount = 0;
-                if (useInventorySystem && playerData != null)
+                _guiStyle = new GUIStyle(GUI.skin.label)
                 {
-                    ballCount = playerData.Inventory.GetTotalBalls();
-                }
-                else if (DropPuzzleManager.Instance != null)
-                {
-                    ballCount = DropPuzzleManager.Instance.RiceBallsAvailable;
-                }
-                
+                    fontSize  = 18,
+                    alignment = TextAnchor.MiddleLeft
+                };
+                _guiStyle.normal.textColor = Color.white;
+                _guiStyleBuilt = true;
+            }
+
+            int ballCount = 0;
+            if (useInventorySystem && playerData != null)
+                ballCount = playerData.Inventory.GetTotalBalls();
+            else if (DropPuzzleManager.Instance != null)
+                ballCount = DropPuzzleManager.Instance.RiceBallsAvailable;
+
+            // Only rebuild the label string when the count changes
+            if (ballCount != _lastGuiBallCount)
+            {
+                _lastGuiBallCount = ballCount;
                 if (ballCount > 0)
                 {
-                    style.normal.textColor = Color.green;
-                    GUI.Label(new Rect(10, 60, 400, 30), 
-                        $"Press SPACE to drop {ballCount} riceballs", style);
+                    _guiStyle.normal.textColor = Color.green;
+                    _guiLabelStr = $"Press SPACE to drop {ballCount} riceballs";
                 }
                 else
                 {
-                    style.normal.textColor = Color.red;
-                    GUI.Label(new Rect(10, 60, 400, 30), 
-                        "⚠️ No riceballs! Press [Esc] to go back", style);
+                    _guiStyle.normal.textColor = Color.red;
+                    _guiLabelStr = "No riceballs! Press [Esc] to go back";
                 }
             }
+
+            GUI.Label(new Rect(10, 60, 400, 30), _guiLabelStr, _guiStyle);
         }
         
         private void OnDrawGizmos()

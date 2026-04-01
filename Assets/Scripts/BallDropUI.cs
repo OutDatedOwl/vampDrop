@@ -36,8 +36,23 @@ namespace Vampire.DropPuzzle
         private BallDropCompletionManager completionManager;
         private DayNightCycleManager cycleManager;
         private PlayerDataManager playerData => PlayerDataManager.Instance;
-        private int currencyEarned = 0; // Track currency earned this session
+        private int currencyEarned = 0;
         private int startingCurrency = 0;
+
+        // ── Change-detection cache ────────────────────────────────────────
+        private int    _lastTimeSecond = -1;
+        private string _lastTimeStr    = "";
+
+        // ── Strings built ONCE at event time, displayed statically ────────
+        private string _completionStatsStr = "";   // set in ShowCompletionUI
+        private string _warningStr         = "";   // set in ShowDaylightWarning
+        private bool   _showWarning        = false;
+
+        // ── OnGUI cached styles (allocated once, not every frame) ─────────
+        private GUIStyle _guiBigStyle;
+        private GUIStyle _guiWarningStyle;
+        private GUIStyle _guiStatStyle;
+        private bool     _guiStylesBuilt;
         
         private void Start()
         {
@@ -48,7 +63,7 @@ namespace Vampire.DropPuzzle
             if (playerData != null)
             {
                 startingCurrency = playerData.TotalCurrency;
-                Debug.Log($"[BallDropUI] Starting currency: ${startingCurrency / 100f:F2}");
+                // Debug.Log($"[BallDropUI] Starting currency: ${startingCurrency / 100f:F2}");
             }
             
             // Setup tutorial puzzle if in tutorial mode
@@ -67,11 +82,11 @@ namespace Vampire.DropPuzzle
                 completionManager.isDropActive = false;
                 
                 completionManager.OnDropComplete += ShowCompletionUI;
-                Debug.Log("[BallDropUI] Subscribed to OnDropComplete event and reset completion state");
+                // Debug.Log("[BallDropUI] Subscribed to OnDropComplete event and reset completion state");
             }
             else
             {
-                Debug.LogError("[BallDropUI] BallDropCompletionManager not found!");
+                // Debug.LogError("[BallDropUI] BallDropCompletionManager not found!");
             }
             
             cycleManager = DayNightCycleManager.Instance;
@@ -91,7 +106,7 @@ namespace Vampire.DropPuzzle
             if (completionPanel != null) completionPanel.SetActive(false);
             if (warningPanel != null) warningPanel.SetActive(false);
             
-            Debug.Log("[BallDropUI] Initialized");
+            // Debug.Log("[BallDropUI] Initialized");
         }
         
         private void OnDestroy()
@@ -115,24 +130,37 @@ namespace Vampire.DropPuzzle
         
         private void Update()
         {
-            // Update time display
-            if (timeDisplay != null && cycleManager != null)
-            {
-                string timeStr = cycleManager.GetFormattedTimeRemaining();
-                string phase = cycleManager.currentTime == DayNightCycleManager.TimeOfDay.Day ? "☀️ DAY" : "🌙 NIGHT";
-                timeDisplay.text = $"{phase} - {timeStr}";
-            }
-            
-            // Allow escape key to go back anytime
+            // ── During the drop phase the player is just watching balls fall.
+            //    No UI polling needed until completion fires via event.
+            //    Only handle input and the once-per-second time display. ──────
+
+            // Escape always works
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 GoBackToFPS();
+                return;
             }
-            
-            // Allow E key when complete
-            if (completionManager != null && completionManager.isComplete && Input.GetKeyDown(KeyCode.E))
+
+            // Post-completion: E key to return
+            if (completionManager != null && completionManager.isComplete)
             {
-                GoBackToFPS();
+                if (Input.GetKeyDown(KeyCode.E))
+                    GoBackToFPS();
+                return; // Nothing else to update — completion screen is static
+            }
+
+            // Time display — only update once per second, only if TMP ref is assigned
+            if (timeDisplay != null && cycleManager != null)
+            {
+                int sec = Mathf.CeilToInt(cycleManager.GetTimeRemaining());
+                if (sec != _lastTimeSecond)
+                {
+                    _lastTimeSecond  = sec;
+                    string phase     = cycleManager.currentTime == DayNightCycleManager.TimeOfDay.Day
+                                       ? "DAY" : "NIGHT";
+                    _lastTimeStr     = $"{phase} - {cycleManager.GetFormattedTimeRemaining()}";
+                    timeDisplay.text = _lastTimeStr;
+                }
             }
         }
         
@@ -145,7 +173,7 @@ namespace Vampire.DropPuzzle
             var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
-                Debug.LogWarning("[BallDropUI] No ECS world found");
+                // Debug.LogWarning("[BallDropUI] No ECS world found");
                 return;
             }
             
@@ -167,7 +195,7 @@ namespace Vampire.DropPuzzle
                         entityManager.AddComponent<Vampire.Rice.RiceHidden>(entity);
                     }
                 }
-                Debug.Log($"[BallDropUI] 👁️‍🗨️ Hidden {hidden} FPS rice entities (not destroyed)");
+                // Debug.Log($"[BallDropUI] 👁️‍🗨️ Hidden {hidden} FPS rice entities (not destroyed)");
             }
             
             riceEntities.Dispose();
@@ -185,7 +213,7 @@ namespace Vampire.DropPuzzle
                 {
                     entityManager.DestroyEntity(entity);
                 }
-                Debug.Log($"[BallDropUI] ♻️ Destroyed {destroyed} riceball entities from ball drop");
+                // Debug.Log($"[BallDropUI] ♻️ Destroyed {destroyed} riceball entities from ball drop");
             }
             
             ballEntities.Dispose();
@@ -197,7 +225,7 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private void ShowCompletionUI()
         {
-            Debug.Log("[BallDropUI] ShowCompletionUI called!");
+            // Debug.Log("[BallDropUI] ShowCompletionUI called!");
             
             // Pause day/night cycle while viewing completion screen
             if (cycleManager != null)
@@ -217,7 +245,7 @@ namespace Vampire.DropPuzzle
             
             if (completionPanel == null)
             {
-                Debug.LogError("[BallDropUI] ⚠️ completionPanel is NULL! Assign it in the Inspector.");
+                // Debug.LogError("[BallDropUI] ⚠️ completionPanel is NULL! Assign it in the Inspector.");
                 return;
             }
             
@@ -255,7 +283,7 @@ namespace Vampire.DropPuzzle
                 }
             }
             
-            Debug.Log($"[BallDropUI] Completion - Earned ${currencyEarned} - Press [E] to return");
+            // Debug.Log($"[BallDropUI] Completion - Earned ${currencyEarned} - Press [E] to return");
         }
         
         /// <summary>
@@ -273,7 +301,7 @@ namespace Vampire.DropPuzzle
                 warningText.text = $"⚠️ DAYLIGHT IN {Mathf.CeilToInt(timeLeft)}s!\nFinish up or salvage!";
             }
             
-            Debug.LogWarning("[BallDropUI] Showing daylight warning");
+            // Debug.LogWarning("[BallDropUI] Showing daylight warning");
         }
         
         /// <summary>
@@ -292,7 +320,7 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private void GoBackToFPS()
         {
-            Debug.Log($"[BallDropUI] Loading scene: {fpsSceneName}");
+            // Debug.Log($"[BallDropUI] Loading scene: {fpsSceneName}");
             
             // Resume day/night cycle when leaving completion screen
             if (cycleManager != null)
@@ -314,7 +342,7 @@ namespace Vampire.DropPuzzle
             var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
-                Debug.LogWarning("[BallDropUI] No ECS world found for unhiding rice");
+                // Debug.LogWarning("[BallDropUI] No ECS world found for unhiding rice");
                 return;
             }
             
@@ -336,11 +364,11 @@ namespace Vampire.DropPuzzle
                         entityManager.RemoveComponent<Vampire.Rice.RiceHidden>(entity);
                     }
                 }
-                Debug.Log($"[BallDropUI] 👁️ Unhidden {unhidden} FPS rice entities (ready to collect)");
+                // Debug.Log($"[BallDropUI] 👁️ Unhidden {unhidden} FPS rice entities (ready to collect)");
             }
             else
             {
-                Debug.LogWarning("[BallDropUI] No hidden rice entities found to unhide!");
+                // Debug.LogWarning("[BallDropUI] No hidden rice entities found to unhide!");
             }
             
             entities.Dispose();
@@ -353,109 +381,69 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private void OnGUI()
         {
-            // Simple on-screen UI
-            GUIStyle bigStyle = new GUIStyle(GUI.skin.label);
-            bigStyle.fontSize = 24;
-            bigStyle.normal.textColor = Color.white;
-            bigStyle.alignment = TextAnchor.MiddleCenter;
-            
-            GUIStyle warningStyle = new GUIStyle(bigStyle);
-            warningStyle.normal.textColor = Color.yellow;
-            
-            // Time display (only if proper canvas doesn't exist)
-            if (completionPanel == null && cycleManager != null)
+            // Build styles once
+            if (!_guiStylesBuilt)
             {
-                string timeStr = cycleManager.GetFormattedTimeRemaining();
-                string phase = cycleManager.currentTime == DayNightCycleManager.TimeOfDay.Day ? "☀️ DAY" : "🌙 NIGHT";
-                GUI.Label(new Rect(10, 10, 300, 40), $"{phase} - {timeStr}", bigStyle);
+                _guiBigStyle = new GUIStyle(GUI.skin.label)
+                    { fontSize = 24, alignment = TextAnchor.MiddleCenter };
+                _guiBigStyle.normal.textColor = Color.white;
+
+                _guiWarningStyle = new GUIStyle(_guiBigStyle);
+                _guiWarningStyle.normal.textColor = Color.yellow;
+
+                _guiStatStyle = new GUIStyle(GUI.skin.label)
+                    { fontSize = 18, alignment = TextAnchor.UpperLeft };
+                _guiStatStyle.normal.textColor = Color.white;
+
+                _guiStylesBuilt = true;
             }
-            
-            // COMPLETION SCREEN - Always show when complete (critical for progression!)
-            if (completionManager != null && completionManager.isComplete)
+
+            bool isComplete = completionManager != null && completionManager.isComplete;
+
+            // ── COMPLETION SCREEN (shown once, fully static after ShowCompletionUI fires) ──
+            if (isComplete)
             {
-                // Recalculate currency earned for UI
-                if (playerData != null && currencyEarned == 0)
-                {
-                    currencyEarned = playerData.TotalCurrency - startingCurrency;
-                }
-                
-                // If proper canvas UI exists and is active, don't duplicate
-                if (completionPanel != null && completionPanel.activeSelf)
-                {
-                    return; // Canvas UI is handling it
-                }
-                
-                // FALLBACK: OnGUI completion screen
+                // Canvas panel is handling it — don't duplicate
+                if (completionPanel != null && completionPanel.activeSelf) return;
+
+                // OnGUI fallback completion screen — strings built once in ShowCompletionUI,
+                // just display the cached values here
                 GUI.Box(new Rect(Screen.width / 2 - 250, Screen.height / 2 - 150, 500, 300), "");
-                
-                // Title
-                bigStyle.fontSize = 32;
-                bigStyle.normal.textColor = Color.green;
-                GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height / 2 - 120, 500, 50), 
-                    "🎉 Drop Complete!", bigStyle);
-                
-                // Stats - Show money earned
-                bigStyle.fontSize = 24;
-                bigStyle.normal.textColor = Color.yellow;
-                string statsText = "";
-                
-                // Show currency earned
-                if (currencyEarned > 0)
-                {
-                    statsText = $"💰 Earned: ${currencyEarned / 100f:F2}";
-                }
-                else
-                {
-                    statsText = "✅ Complete!";
-                }
-                
-                GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height / 2 - 50, 500, 80), 
-                    statsText, bigStyle);
-                
-                // Return prompt
-                bigStyle.fontSize = 28;
-                bigStyle.normal.textColor = Color.yellow;
-                GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height / 2 + 50, 500, 40), 
-                    "✅ [E] Return to FPS mode", bigStyle);
-                
-                // Button alternative
+
+                _guiBigStyle.fontSize = 32;
+                _guiBigStyle.normal.textColor = Color.green;
+                GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height / 2 - 120, 500, 50),
+                    "Drop Complete!", _guiBigStyle);
+
+                _guiBigStyle.fontSize = 24;
+                _guiBigStyle.normal.textColor = Color.yellow;
+                GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height / 2 - 50, 500, 80),
+                    _completionStatsStr, _guiBigStyle);
+
+                _guiBigStyle.fontSize = 28;
+                GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height / 2 + 50, 500, 40),
+                    "[E] Return to FPS mode", _guiBigStyle);
+
                 if (GUI.Button(new Rect(Screen.width / 2 - 100, Screen.height / 2 + 95, 200, 40), "or Click Here"))
-                {
                     GoBackToFPS();
-                }
-                
-                return; // Don't show other UI when complete
+
+                return;
             }
-            
-            // Only show these if no proper canvas exists
+
+            // ── DURING DROP PHASE — minimal UI, no inventory polling ──────────
+            // Time display fallback (only if no TMP timeDisplay assigned)
+            if (completionPanel == null && cycleManager != null && !string.IsNullOrEmpty(_lastTimeStr))
+                GUI.Label(new Rect(10, 10, 300, 40), _lastTimeStr, _guiBigStyle);
+
+            // Daylight warning (event-driven text, just display the cached string)
+            if (_showWarning && !string.IsNullOrEmpty(_warningStr))
+                GUI.Label(new Rect(Screen.width / 2 - 200, 60, 400, 40), _warningStr, _guiWarningStyle);
+
+            // Go Back button (no inventory query needed)
             if (completionPanel == null)
             {
-                // Show rice count and currency at top (replaces old DropPuzzleUI)
-                GUIStyle statStyle = new GUIStyle(GUI.skin.label);
-                statStyle.fontSize = 18;
-                statStyle.normal.textColor = Color.white;
-                statStyle.alignment = TextAnchor.UpperLeft;
-                
-                if (playerData != null)
-                {
-                    int totalBalls = playerData.Inventory.GetTotalBalls();
-                    GUI.Label(new Rect(10, 40, 300, 30), $"Rice Balls: {totalBalls}", statStyle);
-                    GUI.Label(new Rect(10, 70, 300, 30), $"Currency: ${playerData.TotalCurrency / 100f:F2}", statStyle);
-                }
-                
-                // Show "Go Back" button even before completion (in case they want to leave early)
-                if (GUI.Button(new Rect(Screen.width - 220, Screen.height - 60, 200, 50), "Go Back Inside [Esc]"))
-                {
+                if (GUI.Button(new Rect(Screen.width - 220, Screen.height - 60, 200, 50), "Go Back [Esc]"))
                     GoBackToFPS();
-                }
-                
-                // Warning
-                if (cycleManager != null && cycleManager.isWarningActive && completionManager != null && !completionManager.isComplete)
-                {
-                    float timeLeft = cycleManager.GetTimeRemaining();
-                    GUI.Label(new Rect(Screen.width / 2 - 200, 60, 400, 40), 
-                        $"⚠️ DAYLIGHT IN {Mathf.CeilToInt(timeLeft)}s!", warningStyle);
-                }
             }
         }
     }

@@ -12,7 +12,7 @@ namespace Vampire.DropPuzzle
         public static UpgradeShop Instance { get; private set; }
         
         [Header("Configuration")]
-        public bool debugLogPurchases = true;
+        public bool debugLogPurchases = false;
         
         private PlayerDataManager playerData => PlayerDataManager.Instance;
         
@@ -41,14 +41,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.DropPuzzle.x2GateChance >= 0.5f)
             {
-                Debug.LogWarning("[Shop] x2 Gate chance maxed at 50%!");
+                // Debug.LogWarning("[Shop] x2 Gate chance maxed at 50%!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "x2 Gate Chance +5%"))
             {
                 playerData.DropPuzzle.x2GateChance += 0.05f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased x2 Gate +5% | Now: {playerData.DropPuzzle.x2GateChance * 100}%");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased x2 Gate +5% | Now: {playerData.DropPuzzle.x2GateChance * 100}%");
                 return true;
             }
             return false;
@@ -61,13 +61,13 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.DropPuzzle.x2GateChance < 0.1f)
             {
-                Debug.LogWarning("[Shop] Unlock x2 gates first!");
+                // Debug.LogWarning("[Shop] Unlock x2 gates first!");
                 return false;
             }
             
             if (playerData.DropPuzzle.x3GateChance > 0)
             {
-                Debug.LogWarning("[Shop] x3 gates already unlocked!");
+                // Debug.LogWarning("[Shop] x3 gates already unlocked!");
                 return false;
             }
             
@@ -75,7 +75,7 @@ namespace Vampire.DropPuzzle
             if (playerData.SpendCurrency(cost, "Unlock x3 Gates"))
             {
                 playerData.DropPuzzle.x3GateChance = 0.05f; // Start at 5%
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked x3 Gates!");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked x3 Gates!");
                 return true;
             }
             return false;
@@ -88,7 +88,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.DropPuzzle.x3GateChance == 0)
             {
-                Debug.LogWarning("[Shop] Unlock x3 gates first!");
+                // Debug.LogWarning("[Shop] Unlock x3 gates first!");
                 return false;
             }
             
@@ -97,14 +97,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.DropPuzzle.x3GateChance >= 0.35f)
             {
-                Debug.LogWarning("[Shop] x3 Gate chance maxed at 35%!");
+                // Debug.LogWarning("[Shop] x3 Gate chance maxed at 35%!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "x3 Gate Chance +5%"))
             {
                 playerData.DropPuzzle.x3GateChance += 0.05f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased x3 Gate +5% | Now: {playerData.DropPuzzle.x3GateChance * 100}%");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased x3 Gate +5% | Now: {playerData.DropPuzzle.x3GateChance * 100}%");
                 return true;
             }
             return false;
@@ -117,13 +117,13 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.DropPuzzle.x3GateChance < 0.15f)
             {
-                Debug.LogWarning("[Shop] Unlock more x3 gates first!");
+                // Debug.LogWarning("[Shop] Unlock more x3 gates first!");
                 return false;
             }
             
             if (playerData.DropPuzzle.x4GateChance > 0)
             {
-                Debug.LogWarning("[Shop] x4 gates already unlocked!");
+                // Debug.LogWarning("[Shop] x4 gates already unlocked!");
                 return false;
             }
             
@@ -131,7 +131,7 @@ namespace Vampire.DropPuzzle
             if (playerData.SpendCurrency(cost, "Unlock x4 Gates"))
             {
                 playerData.DropPuzzle.x4GateChance = 0.02f; // Start at 2%
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked x4 Gates!");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked x4 Gates!");
                 return true;
             }
             return false;
@@ -144,7 +144,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.DropPuzzle.bonusPointBallChance > 0)
             {
-                Debug.LogWarning("[Shop] Bonus balls already unlocked!");
+                // Debug.LogWarning("[Shop] Bonus balls already unlocked!");
                 return false;
             }
             
@@ -152,7 +152,7 @@ namespace Vampire.DropPuzzle
             if (playerData.SpendCurrency(cost, "Unlock Bonus Point Balls"))
             {
                 playerData.DropPuzzle.bonusPointBallChance = 0.05f; // 5% spawn chance
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked Bonus Point Balls!");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked Bonus Point Balls!");
                 return true;
             }
             return false;
@@ -165,7 +165,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.DropPuzzle.bonusPointBallChance == 0)
             {
-                Debug.LogWarning("[Shop] Unlock bonus balls first!");
+                // Debug.LogWarning("[Shop] Unlock bonus balls first!");
                 return false;
             }
             
@@ -174,14 +174,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.DropPuzzle.bonusPointBallChance >= 0.3f)
             {
-                Debug.LogWarning("[Shop] Bonus ball chance maxed at 30%!");
+                // Debug.LogWarning("[Shop] Bonus ball chance maxed at 30%!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Bonus Ball Chance +5%"))
             {
                 playerData.DropPuzzle.bonusPointBallChance += 0.05f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Bonus Ball +5% | Now: {playerData.DropPuzzle.bonusPointBallChance * 100}%");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Bonus Ball +5% | Now: {playerData.DropPuzzle.bonusPointBallChance * 100}%");
                 return true;
             }
             return false;
@@ -197,14 +197,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.DropPuzzle.startingBalls >= 50)
             {
-                Debug.LogWarning("[Shop] Starting balls maxed at 50!");
+                // Debug.LogWarning("[Shop] Starting balls maxed at 50!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "+5 Starting Balls"))
             {
                 playerData.DropPuzzle.startingBalls += 5;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased +5 Balls | Now: {playerData.DropPuzzle.startingBalls} per level");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased +5 Balls | Now: {playerData.DropPuzzle.startingBalls} per level");
                 return true;
             }
             return false;
@@ -224,14 +224,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.FPSCollector.pickupRadius >= 5.0f)
             {
-                Debug.LogWarning("[Shop] Pickup radius maxed at 5.0!");
+                // Debug.LogWarning("[Shop] Pickup radius maxed at 5.0!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Pickup Radius +0.25"))
             {
                 playerData.FPSCollector.pickupRadius += 0.25f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Pickup Radius | Now: {playerData.FPSCollector.pickupRadius}");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Pickup Radius | Now: {playerData.FPSCollector.pickupRadius}");
                 return true;
             }
             return false;
@@ -244,7 +244,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.FPSCollector.maxSimultaneousPickups > 1)
             {
-                Debug.LogWarning("[Shop] Multi-pickup already unlocked!");
+                // Debug.LogWarning("[Shop] Multi-pickup already unlocked!");
                 return false;
             }
             
@@ -252,7 +252,7 @@ namespace Vampire.DropPuzzle
             if (playerData.SpendCurrency(cost, "Unlock Multi-Pickup"))
             {
                 playerData.FPSCollector.maxSimultaneousPickups = 2;
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked Multi-Pickup (2 rices)");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked Multi-Pickup (2 rices)");
                 return true;
             }
             return false;
@@ -265,7 +265,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.FPSCollector.maxSimultaneousPickups == 1)
             {
-                Debug.LogWarning("[Shop] Unlock multi-pickup first!");
+                // Debug.LogWarning("[Shop] Unlock multi-pickup first!");
                 return false;
             }
             
@@ -274,14 +274,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.FPSCollector.maxSimultaneousPickups >= 5)
             {
-                Debug.LogWarning("[Shop] Multi-pickup maxed at 5!");
+                // Debug.LogWarning("[Shop] Multi-pickup maxed at 5!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Multi-Pickup +1"))
             {
                 playerData.FPSCollector.maxSimultaneousPickups++;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Multi-Pickup | Now: {playerData.FPSCollector.maxSimultaneousPickups} rices");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Multi-Pickup | Now: {playerData.FPSCollector.maxSimultaneousPickups} rices");
                 return true;
             }
             return false;
@@ -294,7 +294,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.FPSCollector.magneticPullEnabled)
             {
-                Debug.LogWarning("[Shop] Magnetic pull already unlocked!");
+                // Debug.LogWarning("[Shop] Magnetic pull already unlocked!");
                 return false;
             }
             
@@ -303,7 +303,7 @@ namespace Vampire.DropPuzzle
             {
                 playerData.FPSCollector.magneticPullEnabled = true;
                 playerData.FPSCollector.magneticPullRadius = 3.0f;
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked Magnetic Pull!");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked Magnetic Pull!");
                 return true;
             }
             return false;
@@ -319,14 +319,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.FPSCollector.moveSpeedMultiplier >= 2.0f)
             {
-                Debug.LogWarning("[Shop] Move speed maxed at 2.0x!");
+                // Debug.LogWarning("[Shop] Move speed maxed at 2.0x!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Move Speed +10%"))
             {
                 playerData.FPSCollector.moveSpeedMultiplier += 0.1f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Move Speed | Now: {playerData.FPSCollector.moveSpeedMultiplier:F1}x");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Move Speed | Now: {playerData.FPSCollector.moveSpeedMultiplier:F1}x");
                 return true;
             }
             return false;
@@ -343,7 +343,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.Crafting.goodChance > 0)
             {
-                Debug.LogWarning("[Shop] Good quality already unlocked!");
+                // Debug.LogWarning("[Shop] Good quality already unlocked!");
                 return false;
             }
             
@@ -351,7 +351,7 @@ namespace Vampire.DropPuzzle
             if (playerData.SpendCurrency(cost, "Unlock Good Quality Riceballs"))
             {
                 playerData.Crafting.goodChance = 0.2f; // 20% chance
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked Good Quality Riceballs (2x value)!");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked Good Quality Riceballs (2x value)!");
                 return true;
             }
             return false;
@@ -364,7 +364,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.Crafting.goodChance == 0)
             {
-                Debug.LogWarning("[Shop] Unlock Good quality first!");
+                // Debug.LogWarning("[Shop] Unlock Good quality first!");
                 return false;
             }
             
@@ -373,14 +373,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.Crafting.goodChance >= 0.5f)
             {
-                Debug.LogWarning("[Shop] Good quality maxed at 50%!");
+                // Debug.LogWarning("[Shop] Good quality maxed at 50%!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Good Quality +5%"))
             {
                 playerData.Crafting.goodChance += 0.05f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Good Quality +5% | Now: {playerData.Crafting.goodChance * 100:F0}%");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Good Quality +5% | Now: {playerData.Crafting.goodChance * 100:F0}%");
                 return true;
             }
             return false;
@@ -393,13 +393,13 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.Crafting.goodChance < 0.3f)
             {
-                Debug.LogWarning("[Shop] Need 30%+ Good quality first!");
+                // Debug.LogWarning("[Shop] Need 30%+ Good quality first!");
                 return false;
             }
             
             if (playerData.Crafting.greatChance > 0)
             {
-                Debug.LogWarning("[Shop] Great quality already unlocked!");
+                // Debug.LogWarning("[Shop] Great quality already unlocked!");
                 return false;
             }
             
@@ -407,7 +407,7 @@ namespace Vampire.DropPuzzle
             if (playerData.SpendCurrency(cost, "Unlock Great Quality Riceballs"))
             {
                 playerData.Crafting.greatChance = 0.05f; // 5% chance
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked Great Quality Riceballs (4x value)!");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked Great Quality Riceballs (4x value)!");
                 return true;
             }
             return false;
@@ -420,7 +420,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.Crafting.greatChance == 0)
             {
-                Debug.LogWarning("[Shop] Unlock Great quality first!");
+                // Debug.LogWarning("[Shop] Unlock Great quality first!");
                 return false;
             }
             
@@ -429,14 +429,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.Crafting.greatChance >= 0.2f)
             {
-                Debug.LogWarning("[Shop] Great quality maxed at 20%!");
+                // Debug.LogWarning("[Shop] Great quality maxed at 20%!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Great Quality +2%"))
             {
                 playerData.Crafting.greatChance += 0.02f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Great Quality +2% | Now: {playerData.Crafting.greatChance * 100:F0}%");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Great Quality +2% | Now: {playerData.Crafting.greatChance * 100:F0}%");
                 return true;
             }
             return false;
@@ -449,13 +449,13 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.Crafting.greatChance < 0.1f)
             {
-                Debug.LogWarning("[Shop] Need 10%+ Great quality first!");
+                // Debug.LogWarning("[Shop] Need 10%+ Great quality first!");
                 return false;
             }
             
             if (playerData.Crafting.excellentChance > 0)
             {
-                Debug.LogWarning("[Shop] Excellent quality already unlocked!");
+                // Debug.LogWarning("[Shop] Excellent quality already unlocked!");
                 return false;
             }
             
@@ -463,7 +463,7 @@ namespace Vampire.DropPuzzle
             if (playerData.SpendCurrency(cost, "Unlock Excellent Quality Riceballs"))
             {
                 playerData.Crafting.excellentChance = 0.01f; // 1% chance
-                if (debugLogPurchases) Debug.Log("[Shop] ✅ Unlocked Excellent Quality Riceballs (8x value)!");
+                if (debugLogPurchases) // Debug.Log("[Shop] ✅ Unlocked Excellent Quality Riceballs (8x value)!");
                 return true;
             }
             return false;
@@ -476,7 +476,7 @@ namespace Vampire.DropPuzzle
         {
             if (playerData.Crafting.excellentChance == 0)
             {
-                Debug.LogWarning("[Shop] Unlock Excellent quality first!");
+                // Debug.LogWarning("[Shop] Unlock Excellent quality first!");
                 return false;
             }
             
@@ -485,14 +485,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.Crafting.excellentChance >= 0.1f)
             {
-                Debug.LogWarning("[Shop] Excellent quality maxed at 10%!");
+                // Debug.LogWarning("[Shop] Excellent quality maxed at 10%!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Excellent Quality +1%"))
             {
                 playerData.Crafting.excellentChance += 0.01f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Excellent Quality +1% | Now: {playerData.Crafting.excellentChance * 100:F0}%");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Excellent Quality +1% | Now: {playerData.Crafting.excellentChance * 100:F0}%");
                 return true;
             }
             return false;
@@ -508,14 +508,14 @@ namespace Vampire.DropPuzzle
             
             if (playerData.Crafting.craftingSpeedMultiplier >= 3.0f)
             {
-                Debug.LogWarning("[Shop] Crafting speed maxed at 3.0x!");
+                // Debug.LogWarning("[Shop] Crafting speed maxed at 3.0x!");
                 return false;
             }
             
             if (playerData.SpendCurrency(cost, "Crafting Speed +20%"))
             {
                 playerData.Crafting.craftingSpeedMultiplier += 0.2f;
-                if (debugLogPurchases) Debug.Log($"[Shop] ✅ Purchased Crafting Speed | Now: {playerData.Crafting.craftingSpeedMultiplier:F1}x");
+                if (debugLogPurchases) // Debug.Log($"[Shop] ✅ Purchased Crafting Speed | Now: {playerData.Crafting.craftingSpeedMultiplier:F1}x");
                 return true;
             }
             return false;

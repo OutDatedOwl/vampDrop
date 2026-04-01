@@ -43,26 +43,26 @@ namespace Vampire.DropPuzzle
         {
             if (playerData == null)
             {
-                Debug.LogWarning("[PuzzleManager] No PlayerDataManager found, using tutorial puzzle");
+                // Debug.LogWarning("[PuzzleManager] No PlayerDataManager found, using tutorial puzzle");
                 return TutorialPuzzle;
             }
             
             // Tutorial logic: Only play tutorial once
             if (!playerData.TutorialCompleted)
             {
-                Debug.Log("[PuzzleManager] Tutorial not completed - loading tutorial puzzle");
+                // Debug.Log("[PuzzleManager] Tutorial not completed - loading tutorial puzzle");
                 return TutorialPuzzle;
             }
             
             // Post-tutorial: Load level 2 (or level 3 based on some criteria)
             if (playerData.TotalRunsCompleted < 10) // Example: Level 2 for first 10 runs
             {
-                Debug.Log("[PuzzleManager] Loading Level 2 puzzle (post-tutorial)");
+                // Debug.Log("[PuzzleManager] Loading Level 2 puzzle (post-tutorial)");
                 return Level2Puzzle;
             }
             else
             {
-                Debug.Log("[PuzzleManager] Loading Level 3 puzzle (advanced)");
+                // Debug.Log("[PuzzleManager] Loading Level 3 puzzle (advanced)");
                 return Level3Puzzle ?? Level2Puzzle; // Fallback to Level 2 if Level 3 missing
             }
         }
@@ -75,18 +75,18 @@ namespace Vampire.DropPuzzle
             var gridLoader = FindObjectOfType<GridPuzzleLoader>();
             if (gridLoader == null)
             {
-                Debug.LogWarning("[PuzzleManager] No GridPuzzleLoader found in scene!");
+                // Debug.LogWarning("[PuzzleManager] No GridPuzzleLoader found in scene!");
                 return;
             }
             
             TextAsset targetPuzzle = GetCurrentPuzzle();
             if (targetPuzzle == null)
             {
-                Debug.LogError("[PuzzleManager] No puzzle assigned for current progress level!");
+                // Debug.LogError("[PuzzleManager] No puzzle assigned for current progress level!");
                 return;
             }
             
-            Debug.Log($"[PuzzleManager] Setting puzzle: {targetPuzzle.name}");
+            // Debug.Log($"[PuzzleManager] Setting puzzle: {targetPuzzle.name}");
             gridLoader.PuzzleJsonFile = targetPuzzle;
             gridLoader.LoadAndBuildPuzzle();
             
@@ -95,7 +95,7 @@ namespace Vampire.DropPuzzle
             {
                 playerData.TutorialCompleted = true;
                 playerData.SavePlayerData();
-                Debug.Log("[PuzzleManager] ✅ Tutorial marked as completed!");
+                // Debug.Log("[PuzzleManager] ✅ Tutorial marked as completed!");
             }
         }
     }

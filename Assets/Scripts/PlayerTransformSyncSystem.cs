@@ -12,6 +12,10 @@ namespace Vampire.Player
     [UpdateBefore(typeof(Rice.RiceCollectionSystem))]
     public partial class PlayerTransformSyncSystem : SystemBase
     {
+        // Cached reference — FindObjectOfType only called once, not every frame
+        private PlayerAuthoring _cachedPlayerAuthoring;
+        private Transform _cachedPlayerTransform;
+
         protected override void OnCreate()
         {
             Debug.Log("[PlayerTransformSyncSystem] Created - will sync player GameObject transform to ECS entity");
@@ -19,21 +23,27 @@ namespace Vampire.Player
 
         protected override void OnUpdate()
         {
-            // Find player GameObject and sync its transform to the ECS entity
-            var playerAuthoring = GameObject.FindObjectOfType<PlayerAuthoring>();
-            
-            if (playerAuthoring != null)
+            // Only search if cache is stale (scene load, first frame, etc.)
+            if (_cachedPlayerAuthoring == null)
             {
-                // Update the ECS entity's transform to match the GameObject
-                Entities
-                    .WithoutBurst()
-                    .WithAll<PlayerData>()
-                    .ForEach((Entity entity, ref LocalTransform transform) =>
-                    {
-                        transform.Position = playerAuthoring.transform.position;
-                        transform.Rotation = playerAuthoring.transform.rotation;
-                    }).Run();
+                _cachedPlayerAuthoring = GameObject.FindFirstObjectByType<PlayerAuthoring>();
+                _cachedPlayerTransform = _cachedPlayerAuthoring != null ? _cachedPlayerAuthoring.transform : null;
             }
+
+            if (_cachedPlayerTransform == null) return;
+
+            var pos = (Unity.Mathematics.float3)_cachedPlayerTransform.position;
+            var rot = (Unity.Mathematics.quaternion)_cachedPlayerTransform.rotation;
+
+            Entities
+                .WithoutBurst()
+                .WithAll<PlayerData>()
+                .ForEach((Entity entity, ref LocalTransform transform) =>
+                {
+                    transform.Position = pos;
+                    transform.Rotation = rot;
+                    // NOTE: Do NOT touch transform.Scale here — rice scale is managed by RiceGPURenderer
+                }).Run();
         }
     }
 }

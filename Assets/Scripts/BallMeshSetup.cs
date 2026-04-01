@@ -14,7 +14,7 @@ namespace Vampire.DropPuzzle
             var renderer = GetComponent<RiceBallRendererECS>();
             if (renderer == null)
             {
-                Debug.LogError("[BallMeshSetup] No RiceBallRendererECS found on this GameObject!");
+                // Debug.LogError("[BallMeshSetup] No RiceBallRendererECS found on this GameObject!");
                 return;
             }
             
@@ -27,7 +27,7 @@ namespace Vampire.DropPuzzle
                 renderer.BallMesh = cylinderMesh;
                 Destroy(tempCylinder); // Clean up temp
                 
-                Debug.Log("[BallMeshSetup] ✅ Created flat cylinder (disc) mesh");
+                // Debug.Log("[BallMeshSetup] ✅ Created flat cylinder (disc) mesh");
             }
             
             // Create material if needed
@@ -45,10 +45,10 @@ namespace Vampire.DropPuzzle
                 
                 renderer.BallMaterial = ballMat;
                 
-                Debug.Log($"[BallMeshSetup] ✅ Created ball material (Shader: {ballMat.shader.name}) with GPU instancing");
+                // Debug.Log($"[BallMeshSetup] ✅ Created ball material (Shader: {ballMat.shader.name}) with GPU instancing");
             }
             
-            Debug.Log("[BallMeshSetup] Ball mesh and material ready!");
+            // Debug.Log("[BallMeshSetup] Ball mesh and material ready!");
         }
     }
 }

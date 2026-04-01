@@ -1,48 +1,47 @@
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 
 namespace Vampire.UI
 {
+    /// <summary>
+    /// Displays rice collected count.
+    /// OPTIMISED: Text is only rebuilt when the count actually changes,
+    /// eliminating a string allocation every frame.
+    /// </summary>
     public class RiceCounterUI : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI counterText;
-        
-        private EntityManager entityManager;
-        private EntityQuery playerQuery;
+
+        private EntityManager _em;
+        private EntityQuery   _playerQuery;
+        private int           _lastRiceCount = -1; // -1 forces first-frame update
 
         private void Start()
         {
-            entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-            playerQuery = entityManager.CreateEntityQuery(typeof(Player.PlayerData));
+            _em          = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _playerQuery = _em.CreateEntityQuery(typeof(Player.PlayerData));
         }
 
         private void Update()
         {
-            if (playerQuery.IsEmpty)
-                return;
-            
-            // Check if exactly one player exists (not multiple during scene transitions)
-            var playerCount = playerQuery.CalculateEntityCount();
-            if (playerCount != 1)
-            {
-                // 0 or multiple players - skip this frame
-                return;
-            }
+            if (_playerQuery.IsEmpty || counterText == null) return;
 
-            var playerEntity = playerQuery.GetSingletonEntity();
-            var playerData = entityManager.GetComponentData<Player.PlayerData>(playerEntity);
-            
-            if (counterText != null)
-            {
-                counterText.text = $"Rice Collected: {playerData.RiceCollected}";
-            }
+            if (_playerQuery.CalculateEntityCount() != 1) return;
+
+            var data = _em.GetComponentData<Player.PlayerData>(_playerQuery.GetSingletonEntity());
+
+            // Only rebuild the string when the value actually changed
+            if (data.RiceCollected == _lastRiceCount) return;
+
+            _lastRiceCount   = data.RiceCollected;
+            counterText.text = $"Rice: {_lastRiceCount}";
         }
 
         private void OnDestroy()
         {
-            playerQuery.Dispose();
+            if (_playerQuery != default)
+                _playerQuery.Dispose();
         }
     }
 }

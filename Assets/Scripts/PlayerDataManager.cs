@@ -43,7 +43,7 @@ namespace Vampire.DropPuzzle
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 LoadPlayerData();
-                Debug.Log("[PlayerData] Manager initialized");
+                // Debug.Log("[PlayerData] Manager initialized");
             }
             else
             {
@@ -62,7 +62,7 @@ namespace Vampire.DropPuzzle
             CurrentRunCurrency += amount;
             TotalCurrencyEarned += amount; // Track lifetime stat for quest progress
             
-            Debug.Log($"[PlayerData] +{amount} currency from {source} | Run:{CurrentRunCurrency} Total:{TotalCurrency} | Lifetime earned: {TotalCurrencyEarned}");
+            // Debug.Log($"[PlayerData] +{amount} currency from {source} | Run:{CurrentRunCurrency} Total:{TotalCurrency} | Lifetime earned: {TotalCurrencyEarned}");
             
             // Notify tutorial manager
             if (TutorialManager.Instance != null)
@@ -83,7 +83,7 @@ namespace Vampire.DropPuzzle
         public void AddRice(int amount)
         {
             RiceGrains += amount;
-            Debug.Log($"[PlayerData] +{amount} rice | Total: {RiceGrains}");
+            // Debug.Log($"[PlayerData] +{amount} rice | Total: {RiceGrains}");
         }
         
         /// <summary>
@@ -95,7 +95,7 @@ namespace Vampire.DropPuzzle
             int riceBallsToMake = RiceGrains / 5;
             if (riceBallsToMake == 0)
             {
-                Debug.LogWarning("[PlayerData] Not enough rice! Need 5 rice per riceball.");
+                // Debug.LogWarning("[PlayerData] Not enough rice! Need 5 rice per riceball.");
                 return 0;
             }
             
@@ -132,8 +132,8 @@ namespace Vampire.DropPuzzle
             // Track lifetime stat for quest progress
             TotalRiceBallsCrafted += riceBallsToMake;
             
-            Debug.Log($"[PlayerData] Crafted {riceBallsToMake} riceballs! Fine:{fineCount} Good:{goodCount} Great:{greatCount} Excellent:{excellentCount}");
-            Debug.Log($"[PlayerData] Inventory: {Inventory.GetTotalBalls()} balls | Rice remaining: {RiceGrains} | Lifetime crafted: {TotalRiceBallsCrafted}");
+            // Debug.Log($"[PlayerData] Crafted {riceBallsToMake} riceballs! Fine:{fineCount} Good:{goodCount} Great:{greatCount} Excellent:{excellentCount}");
+            // Debug.Log($"[PlayerData] Inventory: {Inventory.GetTotalBalls()} balls | Rice remaining: {RiceGrains} | Lifetime crafted: {TotalRiceBallsCrafted}");
             
             return riceBallsToMake;
         }
@@ -200,12 +200,12 @@ namespace Vampire.DropPuzzle
         {
             if (TotalCurrency < amount)
             {
-                Debug.LogWarning($"[PlayerData] Not enough currency! Need {amount}, have {TotalCurrency}");
+                // Debug.LogWarning($"[PlayerData] Not enough currency! Need {amount}, have {TotalCurrency}");
                 return false;
             }
             
             TotalCurrency -= amount;
-            Debug.Log($"[PlayerData] Spent {amount} on: {purchaseDescription} | Remaining: {TotalCurrency}");
+            // Debug.Log($"[PlayerData] Spent {amount} on: {purchaseDescription} | Remaining: {TotalCurrency}");
             SavePlayerData();
             return true;
         }
@@ -218,7 +218,7 @@ namespace Vampire.DropPuzzle
             TotalRunsCompleted++;
             CurrentRunCurrency = 0;
             SavePlayerData();
-            Debug.Log($"[PlayerData] Run #{TotalRunsCompleted} complete!");
+            // Debug.Log($"[PlayerData] Run #{TotalRunsCompleted} complete!");
         }
         
         #endregion
@@ -229,13 +229,13 @@ namespace Vampire.DropPuzzle
         {
             // TODO: Implement JSON save to PlayerPrefs or file
             // For now, data persists in memory only (resets on app close)
-            Debug.Log("[PlayerData] Saved (in-memory only for now)");
+            // Debug.Log("[PlayerData] Saved (in-memory only for now)");
         }
         
         public void LoadPlayerData()
         {
             // TODO: Load from PlayerPrefs/file
-            Debug.Log("[PlayerData] Loaded player data");
+            // Debug.Log("[PlayerData] Loaded player data");
         }
         
         public void ResetAllProgress()
@@ -252,7 +252,7 @@ namespace Vampire.DropPuzzle
             HighestLevelReached = 1;
             TutorialCompleted = false;
             SavePlayerData();
-            Debug.Log("[PlayerData] ⚠️ All progress reset!");
+            // Debug.Log("[PlayerData] ⚠️ All progress reset!");
         }
         
         #endregion

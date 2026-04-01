@@ -108,7 +108,7 @@ namespace Vampire.Helpers
             StartCoroutine(HelperAILoop());
             StartCoroutine(RiceCollectionLoop());
             
-            Debug.Log($"[HelperAI] {helperType} helper '{helperId}' deployed in zone '{deployedZoneId}' at {spawnPosition}");
+            // Debug.Log($"[HelperAI] {helperType} helper '{helperId}' deployed in zone '{deployedZoneId}' at {spawnPosition}");
         }
         
         private void Update()
@@ -126,7 +126,7 @@ namespace Vampire.Helpers
                 nearbyRice.Dispose();
             }
             
-            Debug.Log($"[HelperAI] {helperType} helper '{helperId}' recalled. Collected {totalRiceCollected} rice in {Time.time - deploymentTime:F1} seconds.");
+            // Debug.Log($"[HelperAI] {helperType} helper '{helperId}' recalled. Collected {totalRiceCollected} rice in {Time.time - deploymentTime:F1} seconds.");
         }
         
         #endregion
@@ -139,7 +139,7 @@ namespace Vampire.Helpers
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
-                Debug.LogWarning("[HelperAI] ECS World not found - rice detection disabled");
+                // Debug.LogWarning("[HelperAI] ECS World not found - rice detection disabled");
                 return;
             }
             
@@ -151,7 +151,7 @@ namespace Vampire.Helpers
                 ComponentType.ReadOnly<Unity.Transforms.LocalTransform>()
             );
             
-            Debug.Log($"[HelperAI] Rice detection initialized. Found {riceQuery.CalculateEntityCount()} rice entities.");
+            // Debug.Log($"[HelperAI] Rice detection initialized. Found {riceQuery.CalculateEntityCount()} rice entities.");
         }
         
         #endregion
@@ -277,7 +277,7 @@ namespace Vampire.Helpers
         {
             if (currentState != newState)
             {
-                Debug.Log($"[HelperAI] {helperId} state: {currentState} -> {newState}");
+                // Debug.Log($"[HelperAI] {helperId} state: {currentState} -> {newState}");
                 currentState = newState;
             }
         }
@@ -336,7 +336,7 @@ namespace Vampire.Helpers
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[HelperAI] Rice detection failed: {ex.Message}");
+                // Debug.LogWarning($"[HelperAI] Rice detection failed: {ex.Message}");
             }
             
             hasValidTarget = false;
@@ -373,7 +373,7 @@ namespace Vampire.Helpers
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[HelperAI] Rice collection failed: {ex.Message}");
+                // Debug.LogWarning($"[HelperAI] Rice collection failed: {ex.Message}");
             }
         }
         
@@ -390,7 +390,7 @@ namespace Vampire.Helpers
             // Play collection effects
             PlayCollectionEffects(ricePosition);
             
-            Debug.Log($"[HelperAI] {helperId} collected rice! Carrying: {currentCarryCount}/{maxCarryCapacity}");
+            // Debug.Log($"[HelperAI] {helperId} collected rice! Carrying: {currentCarryCount}/{maxCarryCapacity}");
         }
         
         private void DepositCollectedRice()
@@ -400,7 +400,7 @@ namespace Vampire.Helpers
                 // Add rice to player inventory
                 playerData.AddCurrency(currentCarryCount);
                 
-                Debug.Log($"[HelperAI] {helperId} deposited {currentCarryCount} rice! Player total: {playerData.TotalCurrency}");
+                // Debug.Log($"[HelperAI] {helperId} deposited {currentCarryCount} rice! Player total: {playerData.TotalCurrency}");
                 
                 // Reset carry count
                 currentCarryCount = 0;
@@ -452,7 +452,7 @@ namespace Vampire.Helpers
         private void PlayDepositEffects()
         {
             // Could add deposit particle effect here
-            Debug.Log($"[HelperAI] {helperId} plays deposit effects");
+            // Debug.Log($"[HelperAI] {helperId} plays deposit effects");
         }
         
         private void UpdateAmbientSounds()
@@ -493,7 +493,7 @@ namespace Vampire.Helpers
                 // Draw path to target
                 if (hasValidTarget)
                 {
-                    UnityEngine.Debug.DrawLine(transform.position, targetPosition, Color.red, 0.1f);
+                    // UnityEngine.Debug.DrawLine(transform.position, targetPosition, Color.red, 0.1f);
                 }
             }
         }
@@ -516,14 +516,14 @@ namespace Vampire.Helpers
         
         public void DEBUG_ShowStatus()
         {
-            Debug.Log($"=== Helper {helperId} Status ===");
-            Debug.Log($"Type: {helperType}");
-            Debug.Log($"Zone: {deployedZoneId}");
-            Debug.Log($"State: {currentState}");
-            Debug.Log($"Carrying: {currentCarryCount}/{maxCarryCapacity}");
-            Debug.Log($"Total Collected: {totalRiceCollected}");
-            Debug.Log($"Deployment Time: {Time.time - deploymentTime:F1}s");
-            Debug.Log($"==============================");
+            // Debug.Log($"=== Helper {helperId} Status ===");
+            // Debug.Log($"Type: {helperType}");
+            // Debug.Log($"Zone: {deployedZoneId}");
+            // Debug.Log($"State: {currentState}");
+            // Debug.Log($"Carrying: {currentCarryCount}/{maxCarryCapacity}");
+            // Debug.Log($"Total Collected: {totalRiceCollected}");
+            // Debug.Log($"Deployment Time: {Time.time - deploymentTime:F1}s");
+            // Debug.Log($"==============================");
         }
         
         #endregion

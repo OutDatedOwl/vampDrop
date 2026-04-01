@@ -47,10 +47,10 @@ namespace Vampire.DropPuzzle
             // Enable better collision detection
             Physics.defaultMaxAngularSpeed = 7f; // Limit rotation speed
             
-            Debug.Log($"[PhysicsOptimizer] ✅ Applied optimizations:");
-            Debug.Log($"  Solver Iterations: {Physics.defaultSolverIterations}");
-            Debug.Log($"  Fixed Timestep: {Time.fixedDeltaTime:F4}s ({FixedTimestepFPS} FPS)");
-            Debug.Log($"  Auto Sync Transforms: {Physics.autoSyncTransforms}");
+            // Debug.Log($"[PhysicsOptimizer] ✅ Applied optimizations:");
+            // Debug.Log($"  Solver Iterations: {Physics.defaultSolverIterations}");
+            // Debug.Log($"  Fixed Timestep: {Time.fixedDeltaTime:F4}s ({FixedTimestepFPS} FPS)");
+            // Debug.Log($"  Auto Sync Transforms: {Physics.autoSyncTransforms}");
         }
         
         private void Update()
@@ -78,7 +78,7 @@ namespace Vampire.DropPuzzle
             
             if (cleaned > 0)
             {
-                Debug.Log($"[PhysicsOptimizer] Cleaned up {cleaned} fallen balls");
+                // Debug.Log($"[PhysicsOptimizer] Cleaned up {cleaned} fallen balls");
             }
         }
     }

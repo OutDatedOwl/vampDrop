@@ -93,6 +93,9 @@ namespace Vampire.Rice
             Entity newHoveredEntity = closestResult.Value.Entity;
             closestResult.Dispose();
             
+            // Get the base rice scale from config (so we never reset to wrong value)
+            float baseScale = RiceRenderingConfig.Instance != null ? RiceRenderingConfig.Instance.Scale : 0.1f;
+
             // Unhighlight previous entity (toggles IEnableableComponent - no structural change!)
             if (currentHoveredEntity != Entity.Null && currentHoveredEntity != newHoveredEntity)
             {
@@ -102,9 +105,9 @@ namespace Vampire.Rice
                     {
                         state.EntityManager.SetComponentEnabled<RiceHighlighted>(currentHoveredEntity, false);
                         
-                        // Reset scale
+                        // Reset scale back to the configured base scale, NOT 1f
                         var transform = state.EntityManager.GetComponentData<LocalTransform>(currentHoveredEntity);
-                        transform.Scale = 1f; // Reset to default
+                        transform.Scale = baseScale;
                         state.EntityManager.SetComponentData(currentHoveredEntity, transform);
                     }
                 }
@@ -122,9 +125,9 @@ namespace Vampire.Rice
                     }
                     state.EntityManager.SetComponentEnabled<RiceHighlighted>(newHoveredEntity, true);
                     
-                    // Scale up
+                    // Scale up relative to base scale
                     var transform = state.EntityManager.GetComponentData<LocalTransform>(newHoveredEntity);
-                    transform.Scale = 1.3f; // 30% larger when hovered
+                    transform.Scale = baseScale * 1.3f; // 30% larger when hovered
                     state.EntityManager.SetComponentData(newHoveredEntity, transform);
                 }
             }
@@ -211,12 +214,12 @@ namespace Vampire.Rice
             // Only check on mouse click
             if (!Input.GetMouseButtonDown(0)) return;
 
-            UnityEngine.Debug.Log("[RiceCollectionSystem] Mouse click detected!");
+            // UnityEngine.Debug.Log("[RiceCollectionSystem] Mouse click detected!");
 
             var camera = Camera.main;
             if (camera == null)
             {
-                UnityEngine.Debug.LogWarning("[RiceCollectionSystem] No camera found!");
+                // UnityEngine.Debug.LogWarning("[RiceCollectionSystem] No camera found!");
                 return;
             }
             
@@ -230,7 +233,7 @@ namespace Vampire.Rice
             else if (playerCount > 1)
             {
                 // Multiple players during scene transition - use the most recent one
-                UnityEngine.Debug.LogWarning($"[RiceCollectionSystem] Player count: {playerCount} (using first available, duplicates will be cleaned up)");
+                // UnityEngine.Debug.LogWarning($"[RiceCollectionSystem] Player count: {playerCount} (using first available, duplicates will be cleaned up)");
             }
             
             // Get the first available player entity
@@ -251,7 +254,7 @@ namespace Vampire.Rice
             // Validate player entity before use
             if (!state.EntityManager.Exists(playerEntity))
             {
-                UnityEngine.Debug.LogWarning("[RiceCollectionSystem] Player entity doesn't exist, skipping frame");
+                // UnityEngine.Debug.LogWarning("[RiceCollectionSystem] Player entity doesn't exist, skipping frame");
                 return;
             }
             
@@ -268,7 +271,7 @@ namespace Vampire.Rice
                 pickupRadius = DropPuzzle.PlayerDataManager.Instance.FPSCollector.pickupRadius;
             }
 
-            UnityEngine.Debug.Log($"[RiceCollectionSystem] Player pos: {playerTransform.Position}, Rice count: {riceCount}, Pickup radius: {pickupRadius}");
+            // UnityEngine.Debug.Log($"[RiceCollectionSystem] Player pos: {playerTransform.Position}, Rice count: {riceCount}, Pickup radius: {pickupRadius}");
 
             // Raycast from camera
             Ray ray = camera.ScreenPointToRay(Input.mousePosition);
@@ -296,12 +299,12 @@ namespace Vampire.Rice
             float distance = closestResult.Value.Distance;
             closestResult.Dispose();
 
-            UnityEngine.Debug.Log($"[RiceCollectionSystem] Job complete. Found rice: {clickedEntity != Entity.Null}, Distance: {distance}");
+            // UnityEngine.Debug.Log($"[RiceCollectionSystem] Job complete. Found rice: {clickedEntity != Entity.Null}, Distance: {distance}");
 
             // Collect the clicked rice
             if (clickedEntity != Entity.Null)
             {
-                UnityEngine.Debug.Log($"[RiceCollectionSystem] ✅ Collecting rice entity!");
+                // UnityEngine.Debug.Log($"[RiceCollectionSystem] ✅ Collecting rice entity!");
                 
                 // Play rice pickup audio
                 if (Vampire.Player.FPSAudioManager.Instance != null)

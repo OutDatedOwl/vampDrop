@@ -25,18 +25,18 @@ namespace Vampire.DropPuzzle
             if (!col.isTrigger)
             {
                 col.isTrigger = true;
-                Debug.LogWarning("[GoalGate] Collider was not set as trigger, fixed automatically");
+                // Debug.LogWarning("[GoalGate] Collider was not set as trigger, fixed automatically");
             }
             
             // Apply the gate color
             Renderer renderer = GetComponent<Renderer>();
             if (renderer != null && renderer.material != null)
             {
-                Debug.Log($"[GoalGate] Setting goal color to: {GateColor} (was {renderer.material.color})");
+                // Debug.Log($"[GoalGate] Setting goal color to: {GateColor} (was {renderer.material.color})");
                 renderer.material.color = GateColor;
             }
             
-            Debug.Log($"[GoalGate] Goal gate ready at position {transform.position}! Color: {GateColor}");
+            // Debug.Log($"[GoalGate] Goal gate ready at position {transform.position}! Color: {GateColor}");
         }
         
         private void OnTriggerEnter(Collider other)
@@ -53,7 +53,7 @@ namespace Vampire.DropPuzzle
                 }
                 else
                 {
-                    Debug.LogWarning("[GoalGate] PlayerDataManager not found!");
+                    // Debug.LogWarning("[GoalGate] PlayerDataManager not found!");
                 }
                 
                 // Destroy the ball

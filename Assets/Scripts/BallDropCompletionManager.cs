@@ -29,6 +29,11 @@ namespace Vampire.DropPuzzle
         // Track ball positions to detect stuck balls
         private Dictionary<Entity, BallTrackingData> trackedBalls = new Dictionary<Entity, BallTrackingData>();
         private float nextCheckTime = 0f;
+        private List<Entity> _toRemove = new List<Entity>(8);
+
+        // Cached query — created once, reused every check to avoid per-call sync points
+        private EntityQuery ballQuery;
+        private EntityManager entityManager;
         
         private struct BallTrackingData
         {
@@ -41,6 +46,18 @@ namespace Vampire.DropPuzzle
         
         private void Start()
         {
+            // Cache ECS references once
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world != null)
+            {
+                entityManager = world.EntityManager;
+                ballQuery = entityManager.CreateEntityQuery(
+                    typeof(RiceBallTag),
+                    typeof(RiceBallPhysics),
+                    typeof(LocalTransform)
+                );
+            }
+
             // Subscribe to day/night events
             if (DayNightCycleManager.Instance != null)
             {
@@ -48,7 +65,7 @@ namespace Vampire.DropPuzzle
                 DayNightCycleManager.Instance.OnNightEnd += HandleNightEnd;
             }
         }
-        
+
         private void OnDestroy()
         {
             if (DayNightCycleManager.Instance != null)
@@ -56,6 +73,9 @@ namespace Vampire.DropPuzzle
                 DayNightCycleManager.Instance.OnDaylightWarning -= HandleDaylightWarning;
                 DayNightCycleManager.Instance.OnNightEnd -= HandleNightEnd;
             }
+
+            if (ballQuery != null)
+                ballQuery.Dispose();
         }
         
         private void Update()
@@ -81,7 +101,7 @@ namespace Vampire.DropPuzzle
             ballsStuck = 0;
             trackedBalls.Clear();
             
-            Debug.Log("[BallDropCompletion] Drop session started");
+            // Debug.Log("[BallDropCompletion] Drop session started");
         }
         
         /// <summary>
@@ -89,89 +109,74 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private void CheckCompletion()
         {
-            // Get ECS world
-            var world = World.DefaultGameObjectInjectionWorld;
-            if (world == null) return;
-            
-            var entityManager = world.EntityManager;
-            
-            // Query all active balls
-            var query = entityManager.CreateEntityQuery(typeof(RiceBallTag), typeof(RiceBallPhysics), typeof(LocalTransform));
-            var entities = query.ToEntityArray(Allocator.Temp);
-            
+            if (ballQuery == null) return;
+
+            // Single sync point: read entities and physics together via chunk iteration
+            // ToEntityArray + ToComponentDataArray would be two separate sync points; this is one.
+            NativeArray<Entity> entities = ballQuery.ToEntityArray(Allocator.Temp);
+            NativeArray<RiceBallPhysics> physicsDatas = ballQuery.ToComponentDataArray<RiceBallPhysics>(Allocator.Temp);
+
             ballsRemaining = entities.Length;
             ballsStuck = 0;
-            
-            // If no balls exist, we're complete
+
             if (ballsRemaining == 0)
             {
                 entities.Dispose();
-                query.Dispose();
+                physicsDatas.Dispose();
                 CompleteDropSession("All balls scored/deleted");
                 return;
             }
-            
-            // Track ball positions to detect stuck balls
-            var newTrackedBalls = new Dictionary<Entity, BallTrackingData>();
-            
+
+            // Remove stale tracking entries — reuse cached list, no GC
+            _toRemove.Clear();
+            foreach (var key in trackedBalls.Keys)
+            {
+                bool stillExists = false;
+                for (int j = 0; j < entities.Length; j++)
+                    if (entities[j] == key) { stillExists = true; break; }
+                if (!stillExists) _toRemove.Add(key);
+            }
+            foreach (var key in _toRemove) trackedBalls.Remove(key);
+
             for (int i = 0; i < entities.Length; i++)
             {
                 var entity = entities[i];
-                var physics = entityManager.GetComponentData<RiceBallPhysics>(entity);
-                var transform = entityManager.GetComponentData<LocalTransform>(entity);
-                
-                Vector3 currentPos = transform.Position;
-                
-                // Check if we've tracked this ball before
+                Vector3 currentPos = physicsDatas[i].Position;
+
                 if (trackedBalls.TryGetValue(entity, out var oldData))
                 {
-                    // Check if ball has moved
                     float distance = Vector3.Distance(currentPos, oldData.lastPosition);
-                    
-                    if (distance < 0.01f) // Ball hasn't moved significantly
+                    if (distance < 0.01f)
                     {
-                        // Increment stuck time
-                        var newData = oldData;
-                        newData.timeSinceLastMove += checkInterval;
-                        
-                        if (newData.timeSinceLastMove >= stuckThreshold)
-                        {
+                        oldData.timeSinceLastMove += checkInterval;
+                        if (oldData.timeSinceLastMove >= stuckThreshold)
                             ballsStuck++;
-                        }
-                        
-                        newTrackedBalls[entity] = newData;
+                        trackedBalls[entity] = oldData;
                     }
                     else
                     {
-                        // Ball moved, reset timer
-                        newTrackedBalls[entity] = new BallTrackingData
+                        trackedBalls[entity] = new BallTrackingData
                         {
-                            lastPosition = currentPos,
+                            lastPosition      = currentPos,
                             timeSinceLastMove = 0f
                         };
                     }
                 }
                 else
                 {
-                    // New ball, start tracking
-                    newTrackedBalls[entity] = new BallTrackingData
+                    trackedBalls[entity] = new BallTrackingData
                     {
-                        lastPosition = currentPos,
+                        lastPosition      = currentPos,
                         timeSinceLastMove = 0f
                     };
                 }
             }
-            
+
             entities.Dispose();
-            query.Dispose();
-            
-            trackedBalls = newTrackedBalls;
-            
-            // Check if all remaining balls are stuck
+            physicsDatas.Dispose();
+
             if (ballsRemaining > 0 && ballsStuck == ballsRemaining)
-            {
                 CompleteDropSession($"All {ballsRemaining} balls stuck");
-            }
         }
         
         /// <summary>
@@ -184,16 +189,16 @@ namespace Vampire.DropPuzzle
             isComplete = true;
             isDropActive = false;
             
-            Debug.Log($"[BallDropCompletion] ✅ DROP COMPLETE: {reason}");
+            // Debug.Log($"[BallDropCompletion] ✅ DROP COMPLETE: {reason}");
             
             if (OnDropComplete != null)
             {
-                Debug.Log($"[BallDropCompletion] Invoking OnDropComplete event ({OnDropComplete.GetInvocationList().Length} subscribers)");
+                // Debug.Log($"[BallDropCompletion] Invoking OnDropComplete event ({OnDropComplete.GetInvocationList().Length} subscribers)");
                 OnDropComplete.Invoke();
             }
             else
             {
-                Debug.LogWarning("[BallDropCompletion] OnDropComplete has no subscribers!");
+                // Debug.LogWarning("[BallDropCompletion] OnDropComplete has no subscribers!");
             }
         }
         
@@ -204,7 +209,7 @@ namespace Vampire.DropPuzzle
         {
             if (isDropActive && !isComplete)
             {
-                Debug.LogWarning("[BallDropCompletion] ⚠️ Daylight approaching! Finish up!");
+                // Debug.LogWarning("[BallDropCompletion] ⚠️ Daylight approaching! Finish up!");
                 // UI will display warning
             }
         }
@@ -216,7 +221,7 @@ namespace Vampire.DropPuzzle
         {
             if (isDropActive && !isComplete)
             {
-                Debug.LogWarning("[BallDropCompletion] ☀️ DAY TIME! Forcing salvage...");
+                // Debug.LogWarning("[BallDropCompletion] ☀️ DAY TIME! Forcing salvage...");
                 ForceSalvage();
             }
         }
@@ -226,23 +231,13 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private void ForceSalvage()
         {
-            // Destroy all remaining balls
-            var world = World.DefaultGameObjectInjectionWorld;
-            if (world == null) return;
-            
-            var entityManager = world.EntityManager;
-            var query = entityManager.CreateEntityQuery(typeof(RiceBallTag));
-            var entities = query.ToEntityArray(Allocator.Temp);
-            
-            int salvaged = entities.Length;
-            
-            entityManager.DestroyEntity(query);
-            
-            entities.Dispose();
-            query.Dispose();
-            
-            Debug.Log($"[BallDropCompletion] Salvaged {salvaged} balls due to daylight");
-            
+            if (ballQuery == null) return;
+
+            int salvaged = ballQuery.CalculateEntityCount();
+            entityManager.DestroyEntity(ballQuery);
+
+            // Debug.Log($"[BallDropCompletion] Salvaged {salvaged} balls due to daylight");
+
             CompleteDropSession($"Daylight salvage - {salvaged} balls destroyed");
         }
         

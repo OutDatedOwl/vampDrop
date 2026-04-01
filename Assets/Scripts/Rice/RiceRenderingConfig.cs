@@ -44,7 +44,7 @@ namespace Vampire.Rice
             }
             else if (instance != this)
             {
-                Debug.LogWarning("[RiceRenderingConfig] Multiple instances found, using first one");
+                // Debug.LogWarning("[RiceRenderingConfig] Multiple instances found, using first one");
             }
             
             ValidateSettings();
@@ -54,12 +54,12 @@ namespace Vampire.Rice
         {
             if (RiceMesh == null)
             {
-                Debug.LogError("[RiceRenderingConfig] ❌ Rice Mesh is not assigned! Drag rice_grain.stl.obj to the RiceMesh field");
+                // Debug.LogError("[RiceRenderingConfig] ❌ Rice Mesh is not assigned! Drag rice_grain.stl.obj to the RiceMesh field");
             }
             
             if (RiceMaterial == null)
             {
-                Debug.LogWarning("[RiceRenderingConfig] No material assigned, creating default...");
+                // Debug.LogWarning("[RiceRenderingConfig] No material assigned, creating default...");
                 RiceMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
                 RiceMaterial.color = new Color(0.95f, 0.9f, 0.7f); // Rice white color
                 RiceMaterial.enableInstancing = true;
@@ -67,7 +67,7 @@ namespace Vampire.Rice
             
             if (!RiceMaterial.enableInstancing && UseGPUInstancing)
             {
-                Debug.LogWarning("[RiceRenderingConfig] Enabling GPU instancing on material for performance");
+                // Debug.LogWarning("[RiceRenderingConfig] Enabling GPU instancing on material for performance");
                 RiceMaterial.enableInstancing = true;
             }
         }

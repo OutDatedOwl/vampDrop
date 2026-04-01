@@ -45,7 +45,7 @@ namespace Vampire.DropPuzzle
             // Singleton pattern with DontDestroyOnLoad
             if (Instance != null && Instance != this)
             {
-                Debug.Log("[DayNightCycle] Destroying duplicate DayNightCycleManager");
+                // Debug.Log("[DayNightCycle] Destroying duplicate DayNightCycleManager");
                 Destroy(gameObject);
                 return;
             }
@@ -56,7 +56,7 @@ namespace Vampire.DropPuzzle
             // Subscribe to scene load events to auto-resume when returning to FPS scene
             SceneManager.sceneLoaded += OnSceneLoaded;
             
-            Debug.Log("[DayNightCycle] Initialized and marked DontDestroyOnLoad");
+            // Debug.Log("[DayNightCycle] Initialized and marked DontDestroyOnLoad");
         }
         
         private void OnDestroy()
@@ -72,7 +72,7 @@ namespace Vampire.DropPuzzle
                 if (isPaused)
                 {
                     Resume();
-                    Debug.Log("[DayNightCycle] Auto-resumed cycle on FPS_Collect scene load");
+                    // Debug.Log("[DayNightCycle] Auto-resumed cycle on FPS_Collect scene load");
                 }
             }
         }
@@ -82,19 +82,13 @@ namespace Vampire.DropPuzzle
             // Start with day
             timeRemaining = phaseDuration;
             currentTime = TimeOfDay.Day;
-            Debug.Log($"[DayNightCycle] Starting as {currentTime}, duration: {phaseDuration}s, this.enabled={enabled}, gameObject.activeSelf={gameObject.activeSelf}");
+            // Debug.Log($"[DayNightCycle] Starting as {currentTime}, duration: {phaseDuration}s, this.enabled={enabled}, gameObject.activeSelf={gameObject.activeSelf}");
         }
         
         private void Update()
         {
             // Skip updates if paused (shop open, completion screen, etc.)
             if (isPaused) return;
-            
-            // Debug logging to diagnose why timer might not be counting
-            if (Time.frameCount % 300 == 0) // Log every ~5 seconds
-            {
-                Debug.Log($"[DayNightCycle] Update - Time: {currentTime}, Remaining: {timeRemaining:F1}s, DeltaTime: {Time.deltaTime:F3}");
-            }
             
             timeRemaining -= Time.deltaTime;
             
@@ -104,7 +98,7 @@ namespace Vampire.DropPuzzle
                 if (timeRemaining <= daylightWarningTime)
                 {
                     isWarningActive = true;
-                    Debug.LogWarning($"[DayNightCycle] ⚠️ DAYLIGHT WARNING! {timeRemaining:F0}s remaining");
+                    // Debug.LogWarning($"[DayNightCycle] ⚠️ DAYLIGHT WARNING! {timeRemaining:F0}s remaining");
                     OnDaylightWarning?.Invoke();
                 }
             }
@@ -125,7 +119,7 @@ namespace Vampire.DropPuzzle
                 timeRemaining = phaseDuration;
                 isWarningActive = false;
                 
-                Debug.Log($"[DayNightCycle] 🌙 NIGHT TIME! Duration: {phaseDuration}s");
+                // Debug.Log($"[DayNightCycle] 🌙 NIGHT TIME! Duration: {phaseDuration}s");
                 OnNightStart?.Invoke();
             }
             else
@@ -135,7 +129,7 @@ namespace Vampire.DropPuzzle
                 timeRemaining = phaseDuration;
                 isWarningActive = false;
                 
-                Debug.Log($"[DayNightCycle] ☀️ DAY TIME! Duration: {phaseDuration}s");
+                // Debug.Log($"[DayNightCycle] ☀️ DAY TIME! Duration: {phaseDuration}s");
                 OnNightEnd?.Invoke(); // Kick player out of ball drop if active
                 OnDayStart?.Invoke();
             }
@@ -177,17 +171,16 @@ namespace Vampire.DropPuzzle
         
         /// <summary>
         /// Force a phase change (for testing or upgrades)
+        /// Always resets timeRemaining even if already in that phase.
         /// </summary>
         public void ForcePhase(TimeOfDay targetTime)
         {
-            if (currentTime == targetTime) return;
-            
             currentTime = targetTime;
             timeRemaining = phaseDuration;
             isWarningActive = false;
-            
-            Debug.Log($"[DayNightCycle] Forced phase to {targetTime}");
-            
+
+            // Debug.Log($"[DayNightCycle] Forced phase to {targetTime}");
+
             if (targetTime == TimeOfDay.Night)
             {
                 OnNightStart?.Invoke();
@@ -205,7 +198,7 @@ namespace Vampire.DropPuzzle
         public void ExtendPhaseDuration(float additionalSeconds)
         {
             phaseDuration += additionalSeconds;
-            Debug.Log($"[DayNightCycle] Phase duration extended to {phaseDuration}s");
+            // Debug.Log($"[DayNightCycle] Phase duration extended to {phaseDuration}s");
         }
         
         /// <summary>
@@ -214,7 +207,7 @@ namespace Vampire.DropPuzzle
         public void AddTimeToCurrentPhase(float additionalSeconds)
         {
             timeRemaining += additionalSeconds;
-            Debug.Log($"[DayNightCycle] Added {additionalSeconds}s to current phase");
+            // Debug.Log($"[DayNightCycle] Added {additionalSeconds}s to current phase");
         }
         
         /// <summary>
@@ -225,7 +218,7 @@ namespace Vampire.DropPuzzle
             if (!isPaused)
             {
                 isPaused = true;
-                Debug.Log("[DayNightCycle] ⏸️ PAUSED");
+                // Debug.Log("[DayNightCycle] ⏸️ PAUSED");
             }
         }
         
@@ -237,7 +230,7 @@ namespace Vampire.DropPuzzle
             if (isPaused)
             {
                 isPaused = false;
-                Debug.Log("[DayNightCycle] ▶️ RESUMED");
+                // Debug.Log("[DayNightCycle] ▶️ RESUMED");
             }
         }
     }

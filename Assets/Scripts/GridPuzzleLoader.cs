@@ -75,7 +75,7 @@ namespace Vampire.DropPuzzle
         
         private void Start()
         {
-            Debug.Log("[GridPuzzleLoader] Starting...");
+            // Debug.Log("[GridPuzzleLoader] Starting...");
             LoadAndBuildPuzzle();
         }
         
@@ -86,30 +86,30 @@ namespace Vampire.DropPuzzle
             // Load JSON from TextAsset
             if (PuzzleJsonFile == null)
             {
-                Debug.LogError("[GridPuzzleLoader] No PuzzleJsonFile assigned! Drag a JSON file to the PuzzleJsonFile field");
+                // Debug.LogError("[GridPuzzleLoader] No PuzzleJsonFile assigned! Drag a JSON file to the PuzzleJsonFile field");
                 CreateDefaultLayout();
                 return;
             }
             
             try
             {
-                Debug.Log($"[GridPuzzleLoader] Loading from {PuzzleJsonFile.name}");
+                // Debug.Log($"[GridPuzzleLoader] Loading from {PuzzleJsonFile.name}");
                 layout = JsonUtility.FromJson<PuzzleGridLayout>(PuzzleJsonFile.text);
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[GridPuzzleLoader] Failed to parse JSON: {e.Message}");
+                // Debug.LogError($"[GridPuzzleLoader] Failed to parse JSON: {e.Message}");
                 CreateDefaultLayout();
                 return;
             }
             
             if (layout == null || layout.grid == null)
             {
-                Debug.LogError("[GridPuzzleLoader] Failed to load layout");
+                // Debug.LogError("[GridPuzzleLoader] Failed to load layout");
                 return;
             }
             
-            Debug.Log($"[GridPuzzleLoader] Building puzzle: {layout.name} ({layout.rows}x{layout.columns})");
+            // Debug.Log($"[GridPuzzleLoader] Building puzzle: {layout.name} ({layout.rows}x{layout.columns})");
             BuildFromGrid();
             
             // CRITICAL: Refresh gate cache in interaction system after rebuilding
@@ -117,13 +117,13 @@ namespace Vampire.DropPuzzle
             if (gateSystem != null)
             {
                 gateSystem.RefreshGates();
-                Debug.Log("[GridPuzzleLoader] Refreshed gate interaction system after rebuild");
+                // Debug.Log("[GridPuzzleLoader] Refreshed gate interaction system after rebuild");
             }
         }
         
         private void CreateDefaultLayout()
         {
-            Debug.Log("[GridPuzzleLoader] Creating default layout");
+            // Debug.Log("[GridPuzzleLoader] Creating default layout");
             
             layout = new PuzzleGridLayout
             {
@@ -152,12 +152,12 @@ namespace Vampire.DropPuzzle
                 }
             };
             
-            Debug.Log("[GridPuzzleLoader] Created default layout");
+            // Debug.Log("[GridPuzzleLoader] Created default layout");
         }
         
         private void BuildFromGrid()
         {
-            Debug.Log("[GridPuzzleLoader] =================== UNIFIED GRID LOGIC ===================");
+            // Debug.Log("[GridPuzzleLoader] =================== UNIFIED GRID LOGIC ===================");
             
             // Create background behind puzzle
             CreateBackground();
@@ -167,9 +167,9 @@ namespace Vampire.DropPuzzle
             float startX = -totalWidth / 2.0f; // Start at negative half-width for centering
             float currentY = StartY;
             
-            Debug.Log($"[GridPuzzleLoader] Grid: {layout.columns} columns, cellSize={layout.cellSize}");
-            Debug.Log($"[GridPuzzleLoader] Total width: {totalWidth}, startX: {startX}");
-            Debug.Log($"[GridPuzzleLoader] Middle column (3) will be at X=0: {startX + 3 * layout.cellSize}");
+            // Debug.Log($"[GridPuzzleLoader] Grid: {layout.columns} columns, cellSize={layout.cellSize}");
+            // Debug.Log($"[GridPuzzleLoader] Total width: {totalWidth}, startX: {startX}");
+            // Debug.Log($"[GridPuzzleLoader] Middle column (3) will be at X=0: {startX + 3 * layout.cellSize}");
             
             for (int row = 0; row < layout.rows; row++)
             {
@@ -185,7 +185,7 @@ namespace Vampire.DropPuzzle
                     
                     if (cellType == "goal")
                     {
-                        Debug.Log($"[GridPuzzleLoader] 🎯 GOAL: Row {row}, Col {col}, Position {calculatedPosition}");
+                        // Debug.Log($"[GridPuzzleLoader] 🎯 GOAL: Row {row}, Col {col}, Position {calculatedPosition}");
                     }
                     
                     BuildCell(cellType, calculatedPosition, row, col);
@@ -194,7 +194,7 @@ namespace Vampire.DropPuzzle
                 currentY -= CellHeight;
             }
             
-            Debug.Log("[GridPuzzleLoader] =================== GRID COMPLETE ===================");
+            // Debug.Log("[GridPuzzleLoader] =================== GRID COMPLETE ===================");
         }
         
         /// <summary>
@@ -244,7 +244,7 @@ namespace Vampire.DropPuzzle
             }
             
             spawnedObjects.Add(backgroundObject);
-            Debug.Log($"[GridPuzzleLoader] Created background at {BackgroundPosition} scale {BackgroundScale}");
+            // Debug.Log($"[GridPuzzleLoader] Created background at {BackgroundPosition} scale {BackgroundScale}");
         }
         
         private void BuildCell(string cellType, Vector3 position, int row, int col)
@@ -360,13 +360,13 @@ namespace Vampire.DropPuzzle
             {
                 // Align to RIGHT edge of cell (block from outside, open to inside)
                 offset = layout.cellSize * 0.5f;
-                Debug.Log($"[GridPuzzleLoader] Left boundary wall at row {row}, col {col}: offset RIGHT by {offset}");
+                // Debug.Log($"[GridPuzzleLoader] Left boundary wall at row {row}, col {col}: offset RIGHT by {offset}");
             }
             else if (col == layout.columns - 1) // Right boundary
             {
                 // Align to LEFT edge of cell (block from outside, open to inside)
                 offset = -layout.cellSize * 0.5f;
-                Debug.Log($"[GridPuzzleLoader] Right boundary wall at row {row}, col {col}: offset LEFT by {offset}");
+                // Debug.Log($"[GridPuzzleLoader] Right boundary wall at row {row}, col {col}: offset LEFT by {offset}");
             }
             else // INTERIOR WALLS - need to check neighbors
             {
@@ -381,27 +381,27 @@ namespace Vampire.DropPuzzle
                 {
                     // Playable space on left, align RIGHT to block from right side
                     offset = layout.cellSize * 0.5f;
-                    Debug.Log($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: LEFT playable, align RIGHT");
+                    // Debug.Log($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: LEFT playable, align RIGHT");
                 }
                 else if (rightIsPlayable && !leftIsPlayable)
                 {
                     // Playable space on right, align LEFT to block from left side
                     offset = -layout.cellSize * 0.5f;
-                    Debug.Log($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: RIGHT playable, align LEFT");
+                    // Debug.Log($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: RIGHT playable, align LEFT");
                 }
                 else if (leftIsPlayable && rightIsPlayable)
                 {
                     // Playable space on BOTH sides - this wall divides the playing field
                     // Keep centered (no offset) to block both paths equally
                     offset = 0f;
-                    Debug.Log($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: BOTH sides playable, CENTER");
+                    // Debug.Log($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: BOTH sides playable, CENTER");
                 }
                 else
                 {
                     // Neither side playable (surrounded by walls/empty) - shouldn't happen normally
                     // Default to center
                     offset = 0f;
-                    Debug.LogWarning($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: No playable neighbors?");
+                    // Debug.LogWarning($"[GridPuzzleLoader] Interior wall at row {row}, col {col}: No playable neighbors?");
                 }
             }
             
@@ -429,7 +429,7 @@ namespace Vampire.DropPuzzle
                         string cell = layout.GetCell(checkRow, checkCol);
                         if (cell == "wall\\")
                         {
-                            Debug.Log($"[GridPuzzleLoader] Found wall\\\\ above at ({checkRow},{checkCol}) for current ({currentRow},{currentCol})");
+                            // Debug.Log($"[GridPuzzleLoader] Found wall\\\\ above at ({checkRow},{checkCol}) for current ({currentRow},{currentCol})");
                             return true;
                         }
                     }
@@ -442,7 +442,7 @@ namespace Vampire.DropPuzzle
                         string cell = layout.GetCell(checkRow, checkCol);
                         if (cell == "wall/")
                         {
-                            Debug.Log($"[GridPuzzleLoader] Found wall/ above at ({checkRow},{checkCol}) for current ({currentRow},{currentCol})");
+                            // Debug.Log($"[GridPuzzleLoader] Found wall/ above at ({checkRow},{checkCol}) for current ({currentRow},{currentCol})");
                             return true;
                         }
                     }
@@ -506,7 +506,7 @@ namespace Vampire.DropPuzzle
             // Validate prefab BEFORE adding component
             if (RiceBallPrefab == null)
             {
-                Debug.LogError($"[GridPuzzleLoader] âŒ No RiceBallPrefab assigned in GridPuzzleLoader Inspector! Multipliers won't work.");
+                // Debug.LogError($"[GridPuzzleLoader] âŒ No RiceBallPrefab assigned in GridPuzzleLoader Inspector! Multipliers won't work.");
             }
             
             // Add multiplier component
@@ -520,13 +520,13 @@ namespace Vampire.DropPuzzle
         
         private GameObject BuildGoalCell(Vector3 position)
         {
-            Debug.Log($"[GridPuzzleLoader] 🎯 Building GOAL at position {position} (should be evenly spaced)");
+            // Debug.Log($"[GridPuzzleLoader] 🎯 Building GOAL at position {position} (should be evenly spaced)");
             
             GameObject goal = GameObject.CreatePrimitive(PrimitiveType.Cube);
             goal.transform.position = position;
             goal.transform.localScale = new Vector3(layout.cellSize * 0.6f, CellHeight * 0.4f, 0.5f);
             
-            Debug.Log($"[GridPuzzleLoader] 🎯 GOAL final position: {goal.transform.position}, scale: {goal.transform.localScale}");
+            // Debug.Log($"[GridPuzzleLoader] 🎯 GOAL final position: {goal.transform.position}, scale: {goal.transform.localScale}");
             
             // Make it a trigger
             Collider col = goal.GetComponent<Collider>();
@@ -550,7 +550,7 @@ namespace Vampire.DropPuzzle
             {
                 GoalGate goalComponent = goal.AddComponent<GoalGate>();
                 goal.name = "GoalGate";
-                Debug.Log($"[GridPuzzleLoader] Added GoalGate component to first goal");
+                // Debug.Log($"[GridPuzzleLoader] Added GoalGate component to first goal");
             }
             else
             {
@@ -593,18 +593,18 @@ namespace Vampire.DropPuzzle
                     if (rolledMultiplier == 0)
                     {
                         // No gate spawned
-                        Debug.Log($"[GridPuzzleLoader] Gate chance roll failed at {position} - no gate placed");
+                        // Debug.Log($"[GridPuzzleLoader] Gate chance roll failed at {position} - no gate placed");
                         return null;
                     }
                     
-                    Debug.Log($"[GridPuzzleLoader] Dynamic gate roll: x{rolledMultiplier} at {position}");
+                    // Debug.Log($"[GridPuzzleLoader] Dynamic gate roll: x{rolledMultiplier} at {position}");
                     return BuildMultiplierGate(position, rolledMultiplier);
                 }
                 else
                 {
                     // Fixed multiplier specified
                     int multiplier = ParseMultiplier(multiplierStr);
-                    Debug.Log($"[GridPuzzleLoader] Fixed gate: x{multiplier} at {position}");
+                    // Debug.Log($"[GridPuzzleLoader] Fixed gate: x{multiplier} at {position}");
                     return BuildMultiplierGate(position, multiplier);
                 }
             }
@@ -621,7 +621,7 @@ namespace Vampire.DropPuzzle
             var playerData = PlayerDataManager.Instance;
             if (playerData == null)
             {
-                Debug.LogWarning("[GridPuzzleLoader] No PlayerDataManager found - no gates will spawn");
+                // Debug.LogWarning("[GridPuzzleLoader] No PlayerDataManager found - no gates will spawn");
                 return 0;
             }
             
@@ -633,26 +633,26 @@ namespace Vampire.DropPuzzle
             // x4 Gates (rarest)
             if (roll < gateChances.x4GateChance)
             {
-                Debug.Log($"[GridPuzzleLoader] 🎯 x4 Gate rolled! ({gateChances.x4GateChance:P1} chance)");
+                // Debug.Log($"[GridPuzzleLoader] 🎯 x4 Gate rolled! ({gateChances.x4GateChance:P1} chance)");
                 return 4;
             }
             
             // x3 Gates
             if (roll < gateChances.x3GateChance)
             {
-                Debug.Log($"[GridPuzzleLoader] 🎯 x3 Gate rolled! ({gateChances.x3GateChance:P1} chance)");
+                // Debug.Log($"[GridPuzzleLoader] 🎯 x3 Gate rolled! ({gateChances.x3GateChance:P1} chance)");
                 return 3;
             }
             
             // x2 Gates (most common)
             if (roll < gateChances.x2GateChance)
             {
-                Debug.Log($"[GridPuzzleLoader] 🎯 x2 Gate rolled! ({gateChances.x2GateChance:P1} chance)");
+                // Debug.Log($"[GridPuzzleLoader] 🎯 x2 Gate rolled! ({gateChances.x2GateChance:P1} chance)");
                 return 2;
             }
             
             // No gate
-            Debug.Log($"[GridPuzzleLoader] No gate rolled (chances: x2:{gateChances.x2GateChance:P1} x3:{gateChances.x3GateChance:P1} x4:{gateChances.x4GateChance:P1})");
+            // Debug.Log($"[GridPuzzleLoader] No gate rolled (chances: x2:{gateChances.x2GateChance:P1} x3:{gateChances.x3GateChance:P1} x4:{gateChances.x4GateChance:P1})");
             return 0;
         }
         private int ParseMultiplier(string str)
@@ -685,7 +685,7 @@ namespace Vampire.DropPuzzle
             if (!Application.isPlaying && PuzzleJsonFile != null)
             {
                 // Only safe to reload in Edit mode
-                Debug.Log("[GridPuzzleLoader] JSON changed - reload in Play mode to see changes");
+                // Debug.Log("[GridPuzzleLoader] JSON changed - reload in Play mode to see changes");
             }
         }
     }

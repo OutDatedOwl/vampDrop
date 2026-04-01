@@ -17,7 +17,7 @@ namespace Vampire.Rice
 
         protected override void OnCreate()
         {
-            Debug.Log("[RiceVisualizerSystem] Created - will create GameObjects for rice entities");
+            // Debug.Log("[RiceVisualizerSystem] Created - will create GameObjects for rice entities");
             
             // Create a simple visual prefab
             ricePrefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -93,7 +93,7 @@ namespace Vampire.Rice
             // Debug log every 2 seconds
             if (World.Time.ElapsedTime % 2.0 < SystemAPI.Time.DeltaTime)
             {
-                Debug.Log($"[RiceVisualizerSystem] Visualizing {entityToGameObject.Count} rice entities");
+                // Debug.Log($"[RiceVisualizerSystem] Visualizing {entityToGameObject.Count} rice entities");
             }
         }
 

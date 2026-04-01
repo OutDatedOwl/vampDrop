@@ -64,7 +64,7 @@ namespace Vampire.DropPuzzle
                 doorwayRenderer = GetComponent<Renderer>();
                 if (doorwayRenderer != null)
                 {
-                    Debug.Log("[DoorwayLighting] ✅ Auto-found Renderer on this GameObject!");
+                    // Debug.Log("[DoorwayLighting] ✅ Auto-found Renderer on this GameObject!");
                 }
             }
             
@@ -72,12 +72,12 @@ namespace Vampire.DropPuzzle
             if (doorwayRenderer != null && doorwayMaterial == null)
             {
                 doorwayMaterial = doorwayRenderer.material; // Creates instance automatically
-                Debug.Log($"[DoorwayLighting] Using material: {doorwayMaterial.name}");
+                // Debug.Log($"[DoorwayLighting] Using material: {doorwayMaterial.name}");
                 
                 // Fix the material shader if it's pink (missing shader)
                 if (doorwayMaterial.shader.name.Contains("Hidden") || doorwayMaterial.shader.name.Contains("Error"))
                 {
-                    Debug.LogWarning("[DoorwayLighting] ⚠️ Material has broken shader! Fixing...");
+                    // Debug.LogWarning("[DoorwayLighting] ⚠️ Material has broken shader! Fixing...");
                     FixMaterialShader();
                 }
                 
@@ -101,11 +101,11 @@ namespace Vampire.DropPuzzle
                     doorwayLight.range = 10f;
                     doorwayLight.shadows = LightShadows.Soft;
                     
-                    Debug.Log("[DoorwayLighting] ✅ Auto-created Point Light");
+                    // Debug.Log("[DoorwayLighting] ✅ Auto-created Point Light");
                 }
                 else
                 {
-                    Debug.Log("[DoorwayLighting] ✅ Found existing Light");
+                    // Debug.Log("[DoorwayLighting] ✅ Found existing Light");
                 }
             }
             
@@ -120,7 +120,7 @@ namespace Vampire.DropPuzzle
             }
             else
             {
-                Debug.LogWarning("[DoorwayLighting] No DayNightCycleManager found!");
+                // Debug.LogWarning("[DoorwayLighting] No DayNightCycleManager found!");
                 SetImmediateState(DayNightCycleManager.TimeOfDay.Day);
             }
         }
@@ -246,23 +246,23 @@ namespace Vampire.DropPuzzle
             if (shader != null)
             {
                 doorwayMaterial.shader = shader;
-                Debug.Log($"[DoorwayLighting] ✅ Fixed shader to: {shader.name}");
+                // Debug.Log($"[DoorwayLighting] ✅ Fixed shader to: {shader.name}");
             }
             else
             {
-                Debug.LogError("[DoorwayLighting] ❌ Could not find any working shader!");
+                // Debug.LogError("[DoorwayLighting] ❌ Could not find any working shader!");
             }
         }
         
         private void OnDayStart()
         {
-            Debug.Log("[DoorwayLighting] ☀️ Transitioning to DAY lighting");
+            // Debug.Log("[DoorwayLighting] ☀️ Transitioning to DAY lighting");
             StartTransition(DayNightCycleManager.TimeOfDay.Day);
         }
         
         private void OnNightStart()
         {
-            Debug.Log("[DoorwayLighting] 🌙 Transitioning to NIGHT lighting");
+            // Debug.Log("[DoorwayLighting] 🌙 Transitioning to NIGHT lighting");
             StartTransition(DayNightCycleManager.TimeOfDay.Night);
         }
         
@@ -300,11 +300,11 @@ namespace Vampire.DropPuzzle
                 doorwayMaterial = doorwayRenderer.material;
                 FixMaterialShader();
                 SetMaterialColor(dayEmissionColor);
-                Debug.Log("[DoorwayLighting] ✅ Material repaired! Try Test Day/Night Lighting now.");
+                // Debug.Log("[DoorwayLighting] ✅ Material repaired! Try Test Day/Night Lighting now.");
             }
             else
             {
-                Debug.LogError("[DoorwayLighting] ❌ No Renderer found! Attach this script to a GameObject with a MeshRenderer/Quad.");
+                // Debug.LogError("[DoorwayLighting] ❌ No Renderer found! Attach this script to a GameObject with a MeshRenderer/Quad.");
             }
         }
     }

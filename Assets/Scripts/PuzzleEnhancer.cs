@@ -29,115 +29,149 @@ namespace Vampire.DropPuzzle
         [Tooltip("Special bonus zone prefab")]
         public GameObject BonusZonePrefab;
         
-        [Header("User Stats Thresholds")]
-        [Tooltip("Rice collected needed for 2x zones")]
-        public int RiceFor2xZones = 1000;
-        
-        [Tooltip("Rice collected needed for 3x zones")]
-        public int RiceFor3xZones = 5000;
-        
-        [Tooltip("Helper count needed for bonus zones")]
+        [Header("BonusZone Threshold")]
+        [Tooltip("Helper count needed for bonus zones to appear")]
         public int HelpersForBonusZones = 3;
+        // MultiplierZone spawn chances come from PlayerDataManager.DropPuzzle (x2/x3/x4GateChance)
+        // and are upgraded via the shop — no static thresholds needed here.
 
-        public void EnhancePuzzle(GameObject puzzleInstance)
+        /// <param name="guaranteeOneX2Gate">
+        /// When true (first post-tutorial run), forces at least one 2x gate regardless of player stats.
+        /// Ensures the player has a good first impression of the multiplier system.
+        /// </param>
+        public void EnhancePuzzle(GameObject puzzleInstance, bool guaranteeOneX2Gate = false)
         {
             if (puzzleInstance == null)
             {
-                Debug.LogError("[PuzzleEnhancer] ❌ Puzzle instance is NULL!");
+                Debug.LogError("[PuzzleEnhancer] Puzzle instance is NULL!");
                 return;
             }
-            
-            Debug.Log($"[PuzzleEnhancer] 🔧 Starting puzzle enhancement for: {puzzleInstance.name}");
-            
-            // Get user stats
-            UserProgression userStats = GetUserStats();
-            Debug.Log($"[PuzzleEnhancer] 📊 User Stats: Rice={userStats.TotalRiceCollected}, Helpers={userStats.ActiveHelperCount}, Level={userStats.CompletedLevels}");
-            Debug.Log($"[PuzzleEnhancer] 🎯 Thresholds: 2x@{RiceFor2xZones} rice, 3x@{RiceFor3xZones} rice, Bonus@{HelpersForBonusZones} helpers");
-            
-            // Find enhancement markers in the puzzle
+
+            Debug.Log($"[PuzzleEnhancer] Enhancing: {puzzleInstance.name} (guaranteeX2={guaranteeOneX2Gate})");
+
             EnhancementMarker[] markers = puzzleInstance.GetComponentsInChildren<EnhancementMarker>();
-            
-            Debug.Log($"[PuzzleEnhancer] 🔍 Found {markers.Length} EnhancementMarkers in puzzle");
-            
+
             if (markers.Length == 0)
             {
-                Debug.LogWarning("[PuzzleEnhancer] ⚠️ No EnhancementMarkers found! Add EnhancementMarker components to your puzzle prefab to enable dynamic zones.");
+                Debug.LogWarning("[PuzzleEnhancer] No EnhancementMarkers found in puzzle prefab — add EnhancementMarker components to gate placeholder objects.");
                 return;
             }
-            
-            int enhancedCount = 0;
-            int removedCount = 0;
+
+            // Get the player's current gate spawn chances
+            DropPuzzleUpgrades gateStats = PlayerDataManager.Instance?.DropPuzzle;
+
+            // Shuffle markers so the guaranteed gate lands on a random one, not always the first
+            ShuffleArray(markers);
+
+            bool x2GuaranteeConsumed = false;
+            int enhanced = 0;
+
             foreach (EnhancementMarker marker in markers)
             {
-                bool wasEnhanced = ProcessEnhancementMarker(marker, userStats);
-                if (wasEnhanced) 
-                    enhancedCount++;
-                else
-                    removedCount++;
+                // Force x2 on the first MultiplierZone marker if guarantee is still pending
+                bool forceX2ThisMarker = guaranteeOneX2Gate
+                    && !x2GuaranteeConsumed
+                    && marker.EnhancementType == EnhancementType.MultiplierZone;
+
+                bool spawned = ProcessEnhancementMarker(marker, gateStats, forceX2ThisMarker);
+
+                if (spawned)
+                {
+                    enhanced++;
+                    if (forceX2ThisMarker)
+                        x2GuaranteeConsumed = true;
+                }
             }
-            
-            Debug.Log($"[PuzzleEnhancer] ✅ Result: {enhancedCount} enhanced, {removedCount} removed (unqualified)");
+
+            if (guaranteeOneX2Gate && !x2GuaranteeConsumed)
+                Debug.LogWarning("[PuzzleEnhancer] Guaranteed x2 gate could not be placed — no MultiplierZone markers in prefab. Add EnhancementMarker (type=MultiplierZone) to the puzzle.");
+
+            Debug.Log($"[PuzzleEnhancer] Done: {enhanced}/{markers.Length} markers became gates");
         }
 
-        private bool ProcessEnhancementMarker(EnhancementMarker marker, UserProgression stats)
+        /// <summary>
+        /// Decide what (if anything) to spawn at this marker.
+        /// MultiplierZone: rolls against DropPuzzle gate chances from PlayerDataManager.
+        /// BonusZone: rolls against helper count threshold (unchanged).
+        /// </summary>
+        private bool ProcessEnhancementMarker(EnhancementMarker marker, DropPuzzleUpgrades gateStats, bool forceX2)
         {
-            GameObject replacementPrefab = null;
-            string enhancementType = "none";
-            
-            Debug.Log($"[PuzzleEnhancer] 🔎 Processing marker: {marker.name} (Type: {marker.EnhancementType})");
-            
-            // Determine what enhancement to apply based on marker type and user stats
+            GameObject prefab = null;
+            string label = "none";
+
             switch (marker.EnhancementType)
             {
                 case EnhancementType.MultiplierZone:
-                    if (stats.TotalRiceCollected >= RiceFor3xZones && Multiplier3xPrefab != null)
+                    if (forceX2 && Multiplier2xPrefab != null)
                     {
-                        replacementPrefab = Multiplier3xPrefab;
-                        enhancementType = "3x Multiplier";
-                        Debug.Log($"[PuzzleEnhancer]   → Qualified for 3x (Rice: {stats.TotalRiceCollected} >= {RiceFor3xZones})");
+                        prefab = Multiplier2xPrefab;
+                        label = "2x (guaranteed)";
                     }
-                    else if (stats.TotalRiceCollected >= RiceFor2xZones && Multiplier2xPrefab != null)
+                    else if (gateStats != null)
                     {
-                        replacementPrefab = Multiplier2xPrefab;
-                        enhancementType = "2x Multiplier";
-                        Debug.Log($"[PuzzleEnhancer]   → Qualified for 2x (Rice: {stats.TotalRiceCollected} >= {RiceFor2xZones})");
+                        // Roll cumulatively highest-to-lowest, matching ProgressionSystem.GenerateGateMultipliers
+                        float roll = Random.Range(0f, 1f);
+                        float cumulative = 0f;
+
+                        cumulative += gateStats.x4GateChance;
+                        if (roll < cumulative && Multiplier3xPrefab != null) // reuse 3x prefab for 4x until 4x prefab exists
+                        {
+                            prefab = Multiplier3xPrefab;
+                            label = "4x→3x";
+                        }
+                        else
+                        {
+                            cumulative += gateStats.x3GateChance;
+                            if (roll < cumulative && Multiplier3xPrefab != null)
+                            {
+                                prefab = Multiplier3xPrefab;
+                                label = "3x";
+                            }
+                            else
+                            {
+                                cumulative += gateStats.x2GateChance;
+                                if (roll < cumulative && Multiplier2xPrefab != null)
+                                {
+                                    prefab = Multiplier2xPrefab;
+                                    label = "2x";
+                                }
+                            }
+                        }
                     }
-                    else
-                    {
-                        Debug.Log($"[PuzzleEnhancer]   → Not qualified (Rice: {stats.TotalRiceCollected}, need {RiceFor2xZones} for 2x)");
-                    }
+                    // else: all chances are 0 (new player, no upgrades) — marker is removed
                     break;
-                    
+
                 case EnhancementType.BonusZone:
+                    UserProgression stats = GetUserStats();
                     if (stats.ActiveHelperCount >= HelpersForBonusZones && BonusZonePrefab != null)
                     {
-                        replacementPrefab = BonusZonePrefab;
-                        enhancementType = "Bonus Zone";
-                        Debug.Log($"[PuzzleEnhancer]   → Qualified for Bonus (Helpers: {stats.ActiveHelperCount} >= {HelpersForBonusZones})");
-                    }
-                    else
-                    {
-                        Debug.Log($"[PuzzleEnhancer]   → Not qualified (Helpers: {stats.ActiveHelperCount}, need {HelpersForBonusZones})");
+                        prefab = BonusZonePrefab;
+                        label = "Bonus Zone";
                     }
                     break;
-                    
+
                 case EnhancementType.ConditionalWall:
-                    Debug.Log($"[PuzzleEnhancer]   → ConditionalWall not yet implemented");
+                    // Not yet implemented
                     break;
             }
-            
-            // Replace the marker with the enhanced zone
-            if (replacementPrefab != null)
+
+            if (prefab != null)
             {
-                ReplaceWithEnhancement(marker, replacementPrefab, enhancementType);
+                ReplaceWithEnhancement(marker, prefab, label);
+                Debug.Log($"[PuzzleEnhancer] {marker.name} → {label}");
                 return true;
             }
-            else
+
+            DestroyImmediate(marker.gameObject);
+            return false;
+        }
+
+        private static void ShuffleArray(EnhancementMarker[] arr)
+        {
+            for (int i = arr.Length - 1; i > 0; i--)
             {
-                // Destroy the marker since player doesn't qualify for this enhancement
-                Debug.Log($"[PuzzleEnhancer]   🗑️ Removing unqualified marker: {marker.name}");
-                DestroyImmediate(marker.gameObject);
-                return false;
+                int j = Random.Range(0, i + 1);
+                (arr[i], arr[j]) = (arr[j], arr[i]);
             }
         }
 

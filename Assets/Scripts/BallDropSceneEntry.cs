@@ -20,13 +20,24 @@ namespace Vampire.DropPuzzle
         private bool playerInRange = false;
         private DayNightCycleManager cycleManager => DayNightCycleManager.Instance;
         private PlayerDataManager playerData => PlayerDataManager.Instance;
+
+        // ── OnGUI cache ───────────────────────────────────────────────────
+        private GUIStyle _guiStyle;
+        private bool     _guiStyleBuilt;
+
+        // Track last state so we only rebuild strings on actual changes
+        private int    _lastBallCount   = -1;
+        private bool   _lastCanEnter    = false;
+        private int    _lastTimeSecond  = -1;
+        private string _guiMessage      = "";
+        private Color  _guiColor        = Color.white;
         
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
             {
                 playerInRange = true;
-                Debug.Log("[BallDropEntry] Player near ball drop entrance");
+                // Debug.Log("[BallDropEntry] Player near ball drop entrance");
             }
         }
         
@@ -54,7 +65,7 @@ namespace Vampire.DropPuzzle
             if (cycleManager == null)
             {
                 // No cycle manager - allow entry (fallback)
-                Debug.LogWarning("[BallDropEntry] No DayNightCycleManager found, allowing entry");
+                // Debug.LogWarning("[BallDropEntry] No DayNightCycleManager found, allowing entry");
                 LoadBallDropScene();
                 return;
             }
@@ -63,7 +74,7 @@ namespace Vampire.DropPuzzle
             {
                 // It's day time - deny entry
                 float timeUntilNight = cycleManager.GetTimeRemaining();
-                Debug.LogWarning($"[BallDropEntry] ⚠️ Ball drop only at night! {timeUntilNight:F0}s until night");
+                // Debug.LogWarning($"[BallDropEntry] ⚠️ Ball drop only at night! {timeUntilNight:F0}s until night");
                 return;
             }
             
@@ -73,13 +84,13 @@ namespace Vampire.DropPuzzle
                 int totalBalls = playerData.Inventory.GetTotalBalls();
                 if (totalBalls == 0)
                 {
-                    Debug.LogWarning("[BallDropEntry] ⚠️ No riceballs! Craft some first (need 5 rice)");
+                    // Debug.LogWarning("[BallDropEntry] ⚠️ No riceballs! Craft some first (need 5 rice)");
                     return;
                 }
             }
             
             // It's night time and have balls - allow entry
-            Debug.Log("[BallDropEntry] Entering ball drop puzzle (Night time)");
+            // Debug.Log("[BallDropEntry] Entering ball drop puzzle (Night time)");
             
             // Notify tutorial manager that we're visiting ball drop (completes "Go Outside" quest)
             if (TutorialManager.Instance != null)
@@ -97,60 +108,66 @@ namespace Vampire.DropPuzzle
         
         private void OnGUI()
         {
-            if (!playerInRange) return;
-            
-            GUIStyle style = new GUIStyle(GUI.skin.label);
-            style.fontSize = 20;
-            style.alignment = TextAnchor.MiddleCenter;
-            style.normal.textColor = Color.white;
-            
-            if (cycleManager == null) return;
-            
-            // Check if we're in tutorial and before quest 3 (Wait for Night)
-            // tutorialStep: 1=CollectRice, 2=CraftRiceballs, 3=WaitNight, 4=GoOutside
-            bool inEarlyTutorial = TutorialManager.Instance != null && 
-                                   TutorialManager.Instance.tutorialActive && 
-                                   TutorialManager.Instance.tutorialStep <= 2;
-            
-            if (!cycleManager.CanEnterBallDrop())
+            if (!playerInRange || cycleManager == null) return;
+
+            // Build style once
+            if (!_guiStyleBuilt)
             {
-                // Day time - show warning ONLY if past quest 2 (or not in tutorial)
-                if (!inEarlyTutorial)
+                _guiStyle = new GUIStyle(GUI.skin.label)
                 {
-                    style.normal.textColor = Color.yellow;
-                    float timeUntilNight = cycleManager.GetTimeRemaining();
-                    string message = string.Format(nightOnlyMessage, cycleManager.GetFormattedTimeRemaining());
-                    GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height - 100, 500, 60), 
-                        message, style);
-                }
-                // else: In early tutorial (quests 1-2), don't show anything about nighttime
+                    fontSize  = 20,
+                    alignment = TextAnchor.MiddleCenter
+                };
+                _guiStyle.normal.textColor = Color.white;
+                _guiStyleBuilt = true;
             }
-            else
+
+            bool inEarlyTutorial = TutorialManager.Instance != null &&
+                                   TutorialManager.Instance.tutorialActive &&
+                                   TutorialManager.Instance.tutorialStep <= 2;
+
+            bool canEnter  = cycleManager.CanEnterBallDrop();
+            int  ballCount = playerData != null ? playerData.Inventory.GetTotalBalls() : 0;
+            int  timeSec   = Mathf.CeilToInt(cycleManager.GetTimeRemaining());
+
+            // Only rebuild the message string when something actually changed
+            if (canEnter != _lastCanEnter || ballCount != _lastBallCount || timeSec != _lastTimeSecond)
             {
-                // Night time - check if have riceballs
-                if (playerData != null && playerData.Inventory.GetTotalBalls() == 0)
+                _lastCanEnter   = canEnter;
+                _lastBallCount  = ballCount;
+                _lastTimeSecond = timeSec;
+
+                if (!canEnter)
                 {
-                    // No riceballs - show craft warning (only if past quest 1)
-                    if (!inEarlyTutorial || TutorialManager.Instance.tutorialStep >= 2)
+                    if (!inEarlyTutorial)
                     {
-                        style.normal.textColor = Color.red;
-                        GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height - 100, 500, 60), 
-                            noBallsMessage, style);
+                        _guiColor   = Color.yellow;
+                        _guiMessage = string.Format(nightOnlyMessage, cycleManager.GetFormattedTimeRemaining());
                     }
+                    else
+                    {
+                        _guiMessage = ""; // suppress in early tutorial
+                    }
+                }
+                else if (ballCount == 0)
+                {
+                    bool show = !inEarlyTutorial || TutorialManager.Instance.tutorialStep >= 2;
+                    _guiColor   = Color.red;
+                    _guiMessage = show ? noBallsMessage : "";
                 }
                 else
                 {
-                    // Have riceballs - show enter prompt (only if quest 3+)
-                    if (!inEarlyTutorial || TutorialManager.Instance.tutorialStep >= 3)
-                    {
-                        style.normal.textColor = Color.green;
-                        int ballCount = playerData != null ? playerData.Inventory.GetTotalBalls() : 0;
-                        string message = $"{enterPromptMessage}\n({ballCount} riceballs ready)";
-                        GUI.Label(new Rect(Screen.width / 2 - 200, Screen.height - 100, 400, 60), 
-                            message, style);
-                    }
+                    bool show = !inEarlyTutorial || TutorialManager.Instance.tutorialStep >= 3;
+                    _guiColor   = Color.green;
+                    _guiMessage = show ? $"{enterPromptMessage}\n({ballCount} riceballs ready)" : "";
                 }
             }
+
+            if (string.IsNullOrEmpty(_guiMessage)) return;
+
+            _guiStyle.normal.textColor = _guiColor;
+            GUI.Label(new Rect(Screen.width / 2 - 250, Screen.height - 100, 500, 60),
+                _guiMessage, _guiStyle);
         }
     }
 }

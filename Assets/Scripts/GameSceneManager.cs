@@ -30,11 +30,11 @@ namespace Vampire
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-                Debug.Log("[GameSceneManager] ✅ Created and persisting across scenes");
+                // Debug.Log("[GameSceneManager] ✅ Created and persisting across scenes");
             }
             else
             {
-                Debug.Log("[GameSceneManager] Duplicate instance found, destroying");
+                // Debug.Log("[GameSceneManager] Duplicate instance found, destroying");
                 Destroy(gameObject);
             }
         }
@@ -46,35 +46,11 @@ namespace Vampire
             // Get current scene once
             string currentScene = SceneManager.GetActiveScene().name;
             
-            // Debug heartbeat every 5 seconds
-            if (Time.time - lastLogTime > 5f)
-            {
-                lastLogTime = Time.time;
-                Debug.Log($"[GameSceneManager] Update running. Current scene: {currentScene}, Transition key: {TransitionKey}");
-            }
-            
-            // Check for ANY key press
-            if (Input.anyKeyDown)
-            {
-                Debug.Log($"[GameSceneManager] Key pressed detected!");
-            }
-            
-            // Specifically test F3
-            if (Input.GetKeyDown(KeyCode.F3))
-            {
-                Debug.Log($"[GameSceneManager] F3 DETECTED!");
-            }
-            
-            if (Input.GetKeyDown(TransitionKey))
-            {
-                Debug.Log($"[GameSceneManager] Transition key ({TransitionKey}) pressed! Current scene: {currentScene}");
-            }
-            
             if (currentScene == FPSSceneName)
             {
                 if (Input.GetKeyDown(TransitionKey))
                 {
-                    Debug.Log($"[GameSceneManager] Transitioning from {FPSSceneName} to {DropPuzzleSceneName}...");
+                    // Debug.Log($"[GameSceneManager] Transitioning from {FPSSceneName} to {DropPuzzleSceneName}...");
                     TransitionToDropPuzzle();
                 }
             }
@@ -82,7 +58,7 @@ namespace Vampire
             {
                 if (Input.GetKeyDown(TransitionKey))
                 {
-                    Debug.Log($"[GameSceneManager] Transition key pressed but not in FPS scene. Current: {currentScene}, Expected: {FPSSceneName}");
+                    // Debug.Log($"[GameSceneManager] Transition key pressed but not in FPS scene. Current: {currentScene}, Expected: {FPSSceneName}");
                 }
             }
         }
@@ -109,7 +85,7 @@ namespace Vampire
                 {
                     // Adding the Disabled component hides them from rendering and physics systems
                     entityManager.AddComponent<Unity.Entities.Disabled>(riceQuery);
-                    Debug.Log($"[GameSceneManager] 🧊 {riceQuery.CalculateEntityCount()} rice entities hibernated.");
+                    // Debug.Log($"[GameSceneManager] 🧊 {riceQuery.CalculateEntityCount()} rice entities hibernated.");
                 }
             }
 
@@ -130,7 +106,7 @@ namespace Vampire
                     dropManager.LoadFromFPSStage(collectedRiceCount);
                 }
                 
-                Debug.Log($"[GameSceneManager] ✅ Drop Puzzle loaded with {collectedRiceCount} rice balls");
+                // Debug.Log($"[GameSceneManager] ✅ Drop Puzzle loaded with {collectedRiceCount} rice balls");
             }
         }
         
@@ -156,10 +132,10 @@ namespace Vampire
                      entityManager.RemoveComponent<Unity.Entities.Disabled>(riceQuery);
                 }
                 
-                Debug.Log("[GameSceneManager] ✨ Rice entities restored.");
+                // Debug.Log("[GameSceneManager] ✨ Rice entities restored.");
             }
             SceneManager.LoadScene(FPSSceneName);
-            Debug.Log("[GameSceneManager] Returning to FPS stage");
+            // Debug.Log("[GameSceneManager] Returning to FPS stage");
         }
     }
 }

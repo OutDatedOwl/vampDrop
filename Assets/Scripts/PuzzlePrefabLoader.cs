@@ -50,63 +50,91 @@ namespace Vampire.DropPuzzle
         {
             puzzleEnhancer = GetComponent<PuzzleEnhancer>();
             if (puzzleEnhancer == null)
-            {
                 puzzleEnhancer = gameObject.AddComponent<PuzzleEnhancer>();
-            }
-            
-            // Determine which puzzle to load
-            int puzzleToLoad = ManualPuzzleIndex;
-            
-            if (UsePlayerLevel && PlayerDataManager.Instance != null)
-            {
-                int playerLevel = PlayerDataManager.Instance.HighestLevelReached;
-                // Clamp to available puzzles
-                puzzleToLoad = Mathf.Clamp(playerLevel - 1, 0, PuzzlePrefabs.Length - 1);
-                Debug.Log($"[PuzzlePrefabLoader] Using player level {playerLevel} -> puzzle index {puzzleToLoad}");
-            }
-            
+
+            int puzzleToLoad = UsePlayerLevel ? SelectPuzzleIndex() : ManualPuzzleIndex;
+            bool guaranteeX2 = IsFirstPostTutorialRun();
+
             currentPuzzleIndex = puzzleToLoad;
-            LoadPuzzle(puzzleToLoad);
+            LoadPuzzle(puzzleToLoad, guaranteeX2);
         }
 
-        public void LoadPuzzle(int puzzleIndex)
+        /// <summary>
+        /// Returns true if the tutorial is done (runtime flag or persisted flag).
+        /// </summary>
+        private bool IsTutorialComplete()
         {
-            Debug.Log($"[PuzzlePrefabLoader] Loading puzzle {puzzleIndex}");
-            
-            // Clear current puzzle
+            if (TutorialManager.Instance != null)
+                return !TutorialManager.Instance.tutorialActive;
+
+            if (PlayerDataManager.Instance != null)
+                return PlayerDataManager.Instance.TutorialCompleted;
+
+            return true; // No manager present — assume complete
+        }
+
+        /// <summary>
+        /// Returns true when we're on the very first non-tutorial puzzle run.
+        /// Used to guarantee the player sees at least one x2 gate.
+        /// </summary>
+        private bool IsFirstPostTutorialRun()
+        {
+            if (!IsTutorialComplete()) return false;
+            if (PlayerDataManager.Instance == null) return false;
+            return PlayerDataManager.Instance.TotalRunsCompleted == 0;
+        }
+
+        /// <summary>
+        /// Chooses puzzle index:
+        ///   Tutorial active → 0
+        ///   Post-tutorial   → random from 1..N-1 (skips tutorial puzzle)
+        /// </summary>
+        private int SelectPuzzleIndex()
+        {
+            if (PuzzlePrefabs == null || PuzzlePrefabs.Length == 0) return 0;
+
+            if (!IsTutorialComplete())
+            {
+                Debug.Log("[PuzzlePrefabLoader] Tutorial active — loading tutorial puzzle (index 0)");
+                return 0;
+            }
+
+            if (PuzzlePrefabs.Length <= 1)
+            {
+                Debug.LogWarning("[PuzzlePrefabLoader] Only one puzzle prefab assigned — add more to PuzzlePrefabs array for post-tutorial variety");
+                return 0;
+            }
+
+            int chosen = Random.Range(1, PuzzlePrefabs.Length);
+            Debug.Log($"[PuzzlePrefabLoader] Post-tutorial: randomly selected puzzle index {chosen} ({PuzzlePrefabs[chosen]?.name})");
+            return chosen;
+        }
+
+        public void LoadPuzzle(int puzzleIndex, bool guaranteeX2Gate = false)
+        {
+            Debug.Log($"[PuzzlePrefabLoader] Loading puzzle {puzzleIndex} (guaranteeX2={guaranteeX2Gate})");
+
             ClearPuzzle();
-            
-            // Create background
             CreateBackground();
-            
-            // Load selected puzzle prefab
+
             if (puzzleIndex >= 0 && puzzleIndex < PuzzlePrefabs.Length && PuzzlePrefabs[puzzleIndex] != null)
             {
                 currentPuzzleInstance = Instantiate(PuzzlePrefabs[puzzleIndex], transform);
                 currentPuzzleInstance.name = $"Puzzle_{puzzleIndex}";
-                
-                // Apply positioning offsets
+
                 currentPuzzleInstance.transform.localPosition = PuzzlePositionOffset;
                 currentPuzzleInstance.transform.localRotation = Quaternion.Euler(PuzzleRotation);
                 currentPuzzleInstance.transform.localScale = PuzzleScale;
-                
-                Debug.Log($"[PuzzlePrefabLoader] Loaded puzzle prefab: {PuzzlePrefabs[puzzleIndex].name} at position {PuzzlePositionOffset}");
-                
-                // DYNAMIC ENHANCEMENT - Process the loaded puzzle
+
+                Debug.Log($"[PuzzlePrefabLoader] Loaded puzzle prefab: {PuzzlePrefabs[puzzleIndex].name}");
+
                 if (EnableDynamicEnhancement && puzzleEnhancer != null)
-                {
-                    Debug.Log("[PuzzlePrefabLoader] 🎨 Dynamic enhancement is ENABLED, calling PuzzleEnhancer...");
-                    puzzleEnhancer.EnhancePuzzle(currentPuzzleInstance);
-                }
+                    puzzleEnhancer.EnhancePuzzle(currentPuzzleInstance, guaranteeX2Gate);
+                else if (!EnableDynamicEnhancement)
+                    Debug.LogWarning("[PuzzlePrefabLoader] Dynamic enhancement is DISABLED");
                 else
-                {
-                    if (!EnableDynamicEnhancement)
-                        Debug.LogWarning("[PuzzlePrefabLoader] Dynamic enhancement is DISABLED in settings");
-                    if (puzzleEnhancer == null)
-                        Debug.LogError("[PuzzlePrefabLoader] PuzzleEnhancer component is NULL!");
-                }
-                
-                // Refresh gate cache for interaction system
+                    Debug.LogError("[PuzzlePrefabLoader] PuzzleEnhancer component is NULL!");
+
                 RefreshGateSystem();
             }
             else

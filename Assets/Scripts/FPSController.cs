@@ -39,7 +39,7 @@ namespace Vampire.Player
         
         [Header("Debug Ground Detection")]
         [Tooltip("Enable detailed ground detection logging")]
-        public bool debugGroundDetection = true;
+        public bool debugGroundDetection = false;
 
         // Private variables
         private CharacterController controller;
@@ -71,14 +71,14 @@ namespace Vampire.Player
             if (audioManager == null)
             {
                 audioManager = FindObjectOfType<FPSAudioManager>();
-                Debug.Log($"[FPSController] Audio manager found: {audioManager != null}");
+                // Debug.Log($"[FPSController] Audio manager found: {audioManager != null}");
             }
             else
             {
-                Debug.Log("[FPSController] Audio manager already assigned");
+                // Debug.Log("[FPSController] Audio manager already assigned");
             }
 
-            Debug.Log("[FPSController] Initialized");
+            // Debug.Log("[FPSController] Initialized");
         }
 
         void Update()
@@ -131,22 +131,22 @@ namespace Vampire.Player
             if (debugGroundDetection && Time.frameCount % 120 == 0) // Every 2 seconds
             {
                 int layerMaskValue = groundMask.value;
-                Debug.Log($"[FPSController] === Ground Detection Debug ===");
-                Debug.Log($"Player Position: {transform.position}");
-                Debug.Log($"Ground Check Position: {groundCheckPos}");
-                Debug.Log($"Ground Check Radius: {groundCheckRadius}");
-                Debug.Log($"Ground Mask Value: {layerMaskValue} (Binary: {System.Convert.ToString(layerMaskValue, 2)})");
-                Debug.Log($"Sphere Check Result: {isGrounded}");
-                Debug.Log($"Raycast Result: {raycastGrounded}");
+                // Debug.Log($"[FPSController] === Ground Detection Debug ===");
+                // Debug.Log($"Player Position: {transform.position}");
+                // Debug.Log($"Ground Check Position: {groundCheckPos}");
+                // Debug.Log($"Ground Check Radius: {groundCheckRadius}");
+                // Debug.Log($"Ground Mask Value: {layerMaskValue} (Binary: {System.Convert.ToString(layerMaskValue, 2)})");
+                // Debug.Log($"Sphere Check Result: {isGrounded}");
+                // Debug.Log($"Raycast Result: {raycastGrounded}");
                 if (raycastGrounded)
                 {
-                    Debug.Log($"Raycast Hit: {hit.collider.name} on layer {hit.collider.gameObject.layer}");
+                    // Debug.Log($"Raycast Hit: {hit.collider.name} on layer {hit.collider.gameObject.layer}");
                 }
                 
                 // Check what colliders are actually nearby
                 Collider[] nearbyColliders = Physics.OverlapSphere(groundCheckPos, groundCheckRadius * 2f);
-                Debug.Log($"Nearby Colliders ({nearbyColliders.Length}): {string.Join(", ", System.Array.ConvertAll(nearbyColliders, c => $"{c.name}(L{c.gameObject.layer})"))}");
-                Debug.Log("================================");
+                // Debug.Log($"Nearby Colliders ({nearbyColliders.Length}): {string.Join(", ", System.Array.ConvertAll(nearbyColliders, c => $"{c.name}(L{c.gameObject.layer})"))}");
+                // Debug.Log("================================");
             }
 
             // Reset vertical velocity when grounded
@@ -216,7 +216,7 @@ namespace Vampire.Player
                     // Reduce log frequency
                     if (Time.frameCount % 240 == 0) // Log once per 4 seconds
                     {
-                        Debug.Log($"[FPSController] Player moving - MoveVector: {moveVector.magnitude:F3}, Running: {running}, Crouching: {crouching}, Grounded: {isGrounded}");
+                        // Debug.Log($"[FPSController] Player moving - MoveVector: {moveVector.magnitude:F3}, Running: {running}, Crouching: {crouching}, Grounded: {isGrounded}");
                     }
                 }
                 else
@@ -229,7 +229,7 @@ namespace Vampire.Player
                     
                     if (Time.frameCount % 240 == 0)
                     {
-                        Debug.Log($"[FPSController] Player stopped - MoveVector: {moveVector.magnitude:F3}");
+                        // Debug.Log($"[FPSController] Player stopped - MoveVector: {moveVector.magnitude:F3}");
                     }
                 }
             }
@@ -238,7 +238,7 @@ namespace Vampire.Player
                 // Log missing audio manager occasionally
                 if (Time.frameCount % 300 == 0) // Every 5 seconds
                 {
-                    Debug.LogWarning("[FPSController] Audio manager is null!");
+                    // Debug.LogWarning("[FPSController] Audio manager is null!");
                 }
             }
 

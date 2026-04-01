@@ -22,7 +22,7 @@ namespace Vampire.DropPuzzle
             if (other.CompareTag("Player"))
             {
                 playerInZone = true;
-                Debug.Log("[BuyZone] Player entered shop zone");
+                // Debug.Log("[BuyZone] Player entered shop zone");
             }
         }
         
@@ -31,7 +31,7 @@ namespace Vampire.DropPuzzle
             if (other.CompareTag("Player"))
             {
                 playerInZone = false;
-                Debug.Log("[BuyZone] Player left shop zone");
+                // Debug.Log("[BuyZone] Player left shop zone");
             }
         }
         
@@ -58,7 +58,7 @@ namespace Vampire.DropPuzzle
         private void OpenShop()
         {
             shopOpen = true;
-            Debug.Log("[BuyZone] 🛒 Shop opened!");
+            // Debug.Log("[BuyZone] 🛒 Shop opened!");
             
             // Pause day/night cycle while shopping
             if (DayNightCycleManager.Instance != null)
@@ -80,7 +80,7 @@ namespace Vampire.DropPuzzle
         private void CloseShop()
         {
             shopOpen = false;
-            Debug.Log("[BuyZone] Shop closed");
+            // Debug.Log("[BuyZone] Shop closed");
             
             // Resume day/night cycle
             if (DayNightCycleManager.Instance != null)

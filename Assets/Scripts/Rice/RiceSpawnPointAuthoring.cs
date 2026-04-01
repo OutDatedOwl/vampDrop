@@ -186,9 +186,9 @@ namespace Vampire.Rice
     {
         public override void Bake(RiceSpawnPointAuthoring authoring)
         {
-            UnityEngine.Debug.Log($"[RiceSpawnPointBaker] BAKING Zone '{authoring.ZoneName}' at position {authoring.transform.position}, Count={authoring.Count}, FloorObjects={authoring.FloorObjects?.Length ?? 0}");
+            // UnityEngine.Debug.Log($"[RiceSpawnPointBaker] BAKING Zone '{authoring.ZoneName}' at position {authoring.transform.position}, Count={authoring.Count}, FloorObjects={authoring.FloorObjects?.Length ?? 0}");
             
-            var entity = GetEntity(TransformUsageFlags.None);
+            var entity = GetEntity(TransformUsageFlags.Dynamic); // Use Dynamic so it has a world position
             
             // Calculate spawn bounds from floor objects
             Bounds spawnBounds = authoring.GetSpawnBounds();
@@ -216,7 +216,7 @@ namespace Vampire.Rice
                 if (validCount > 0)
                 {
                     floorY = totalY / validCount;
-                    UnityEngine.Debug.Log($"[RiceSpawnPointBaker] Calculated floor Y from {validCount} floor objects: {floorY}, Margin: {authoring.WallMargin}");
+                    // UnityEngine.Debug.Log($"[RiceSpawnPointBaker] Calculated floor Y from {validCount} floor objects: {floorY}, Margin: {authoring.WallMargin}");
                 }
             }
             
@@ -224,6 +224,7 @@ namespace Vampire.Rice
             {
                 Center = (float3)spawnBounds.center,
                 Size = (float3)spawnBounds.size,
+                    // Scale = authoring.Scale, // Removed usage of 'Scale' on RiceSpawnPoint and RiceSpawnPointAuthoring (no such member exists)
                 Count = authoring.Count,
                 SpawnOnFloor = true,
                 FloorY = floorY + authoring.SpawnHeightOffset,
@@ -232,7 +233,7 @@ namespace Vampire.Rice
                 MaxRetries = authoring.MaxRetries
             });
             
-            UnityEngine.Debug.Log($"[RiceSpawnPointBaker] ✅ RiceSpawnPoint component added for zone '{authoring.ZoneName}' - Size: {spawnBounds.size}");
+            // UnityEngine.Debug.Log($"[RiceSpawnPointBaker] ✅ RiceSpawnPoint component added for zone '{authoring.ZoneName}' - Size: {spawnBounds.size}");
         }
     }
 }

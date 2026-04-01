@@ -28,11 +28,11 @@ namespace Vampire.DropPuzzle
         {
             if (CurrentVariation == null)
             {
-                Debug.LogError("[PuzzleVariationLoader] No variation assigned! Create one via Assets > Create > Vampire > Puzzle Variation");
+                // Debug.LogError("[PuzzleVariationLoader] No variation assigned! Create one via Assets > Create > Vampire > Puzzle Variation");
                 return;
             }
             
-            Debug.Log($"[PuzzleVariationLoader] Loading variation: {CurrentVariation.VariationName} ({CurrentVariation.Layout})");
+            // Debug.Log($"[PuzzleVariationLoader] Loading variation: {CurrentVariation.VariationName} ({CurrentVariation.Layout})");
             LoadVariation();
         }
         
@@ -49,14 +49,14 @@ namespace Vampire.DropPuzzle
             // Build goal gate
             BuildGoalGate();
             
-            Debug.Log($"[PuzzleVariationLoader] ✅ Loaded {CurrentVariation.VariationName} - {spawnedObjects.Count} objects spawned");
+            // Debug.Log($"[PuzzleVariationLoader] ✅ Loaded {CurrentVariation.VariationName} - {spawnedObjects.Count} objects spawned");
         }
         
         private void BuildWalls()
         {
             if (CurrentVariation.Walls == null || CurrentVariation.Walls.Length == 0)
             {
-                Debug.LogWarning("[PuzzleVariationLoader] No walls configured");
+                // Debug.LogWarning("[PuzzleVariationLoader] No walls configured");
                 return;
             }
             
@@ -87,14 +87,14 @@ namespace Vampire.DropPuzzle
                 spawnedObjects.Add(wall);
             }
             
-            Debug.Log($"[PuzzleVariationLoader] Built {CurrentVariation.Walls.Length} walls");
+            // Debug.Log($"[PuzzleVariationLoader] Built {CurrentVariation.Walls.Length} walls");
         }
         
         private void BuildMultipliers()
         {
             if (CurrentVariation.Multipliers == null || CurrentVariation.Multipliers.Length == 0)
             {
-                Debug.LogWarning("[PuzzleVariationLoader] No multipliers configured");
+                // Debug.LogWarning("[PuzzleVariationLoader] No multipliers configured");
                 return;
             }
             
@@ -149,13 +149,13 @@ namespace Vampire.DropPuzzle
                 spawnedObjects.Add(multGate);
             }
             
-            Debug.Log($"[PuzzleVariationLoader] Built {CurrentVariation.Multipliers.Length} multiplier gates");
+            // Debug.Log($"[PuzzleVariationLoader] Built {CurrentVariation.Multipliers.Length} multiplier gates");
         }
         
         private void BuildGoalGate()
         {
-            Debug.Log($"[PuzzleVariationLoader] !! Building Goal Gate at CORRECTED position: {CurrentVariation.GoalPosition}");
-            Debug.Log($"[PuzzleVariationLoader] This is the ACTUAL goal builder (not GridPuzzleLoader)");
+            // Debug.Log($"[PuzzleVariationLoader] !! Building Goal Gate at CORRECTED position: {CurrentVariation.GoalPosition}");
+            // Debug.Log($"[PuzzleVariationLoader] This is the ACTUAL goal builder (not GridPuzzleLoader)");
             
             GameObject goal;
             
@@ -184,7 +184,7 @@ namespace Vampire.DropPuzzle
                 mat.SetFloat("_Smoothness", 0.5f);
                 renderer.material = mat;
                 
-                Debug.Log($"[PuzzleVariationLoader] Goal color set with shader: {mat.shader.name}");
+                // Debug.Log($"[PuzzleVariationLoader] Goal color set with shader: {mat.shader.name}");
             }
             
             // Add/configure goal gate component
@@ -198,7 +198,7 @@ namespace Vampire.DropPuzzle
             goal.transform.SetParent(transform);
             spawnedObjects.Add(goal);
             
-            Debug.Log($"[PuzzleVariationLoader] Built goal gate at {CurrentVariation.GoalPosition}");
+            // Debug.Log($"[PuzzleVariationLoader] Built goal gate at {CurrentVariation.GoalPosition}");
         }
         
         private Color GetMultiplierColor(int multiplier)

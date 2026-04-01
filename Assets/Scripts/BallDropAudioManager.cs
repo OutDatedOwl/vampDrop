@@ -43,12 +43,28 @@ namespace Vampire.DropPuzzle
         private BallDropCompletionManager completionManager;
         private DropperControllerECS dropperController;
         
+        private void Awake()
+        {
+            // Preload all clips immediately so Unity's FMOD loader doesn't fire
+            // synchronously (390 ms stall) the first time Play() is called mid-drop.
+            PreloadClip(PreDropMusic);
+            PreloadClip(TransitionSound);
+            PreloadClip(FallingMusic);
+            PreloadClip(CompletionMusic);
+        }
+
+        private static void PreloadClip(AudioClip clip)
+        {
+            if (clip != null && clip.loadState == AudioDataLoadState.Unloaded)
+                clip.LoadAudioData();
+        }
+
         private void Start()
         {
             // Find managers
             completionManager = FindObjectOfType<BallDropCompletionManager>();
             dropperController = FindObjectOfType<DropperControllerECS>();
-            
+
             // Create audio sources if not assigned
             if (musicSource == null)
             {
@@ -77,7 +93,7 @@ namespace Vampire.DropPuzzle
             // Wait one frame to ensure audio sources are fully initialized
             StartCoroutine(StartPreDropMusicDelayed());
             
-            Debug.Log("[BallDropAudio] Initialized");
+            // Debug.Log("[BallDropAudio] Initialized");
         }
         
         private System.Collections.IEnumerator StartPreDropMusicDelayed()
@@ -85,7 +101,7 @@ namespace Vampire.DropPuzzle
             yield return null; // Wait one frame
             
             // Start pre-drop music directly (currentState is already PreDrop, so SetState would skip)
-            Debug.Log("[BallDropAudio] Starting PreDrop music...");
+            // Debug.Log("[BallDropAudio] Starting PreDrop music...");
             PlayMusic(PreDropMusic, loop: true);
         }
         
@@ -125,7 +141,7 @@ namespace Vampire.DropPuzzle
         {
             if (currentState == newState) return;
             
-            Debug.Log($"[BallDropAudio] State: {currentState} → {newState}");
+            // Debug.Log($"[BallDropAudio] State: {currentState} → {newState}");
             currentState = newState;
             
             switch (newState)
@@ -139,7 +155,7 @@ namespace Vampire.DropPuzzle
                     if (TransitionSound != null && sfxSource != null)
                     {
                         sfxSource.PlayOneShot(TransitionSound);
-                        Debug.Log("[BallDropAudio] Playing transition sound");
+                        // Debug.Log("[BallDropAudio] Playing transition sound");
                     }
                     // Stop pre-drop music
                     if (musicSource != null && musicSource.isPlaying)
@@ -165,13 +181,13 @@ namespace Vampire.DropPuzzle
         {
             if (clip == null)
             {
-                Debug.LogWarning($"[BallDropAudio] Cannot play music - clip is null! Make sure to assign audio clips in Inspector.");
+                // Debug.LogWarning($"[BallDropAudio] Cannot play music - clip is null! Make sure to assign audio clips in Inspector.");
                 return;
             }
             
             if (musicSource == null)
             {
-                Debug.LogError($"[BallDropAudio] Cannot play music - musicSource is null!");
+                // Debug.LogError($"[BallDropAudio] Cannot play music - musicSource is null!");
                 return;
             }
             
@@ -179,7 +195,7 @@ namespace Vampire.DropPuzzle
             musicSource.loop = loop;
             musicSource.Play();
             
-            Debug.Log($"[BallDropAudio] Playing music: {clip.name} (loop={loop})");
+            // Debug.Log($"[BallDropAudio] Playing music: {clip.name} (loop={loop})");
         }
         
         /// <summary>
@@ -187,7 +203,7 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private void OnDropComplete()
         {
-            Debug.Log("[BallDropAudio] Drop complete - switching to completion music");
+            // Debug.Log("[BallDropAudio] Drop complete - switching to completion music");
             SetState(DropState.Complete);
         }
         

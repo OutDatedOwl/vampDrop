@@ -36,12 +36,12 @@ namespace Vampire.DropPuzzle
             
             if (BallMesh == null)
             {
-                Debug.LogError("[RiceBallRendererECS] No BallMesh assigned!");
+                // Debug.LogError("[RiceBallRendererECS] No BallMesh assigned!");
             }
             
             if (BallMaterial == null)
             {
-                Debug.LogError("[RiceBallRendererECS] No BallMaterial assigned!");
+                // Debug.LogError("[RiceBallRendererECS] No BallMaterial assigned!");
             }
             else
             {
@@ -49,7 +49,7 @@ namespace Vampire.DropPuzzle
                 BallMaterial.enableInstancing = true;
             }
             
-            Debug.Log("[RiceBallRendererECS] GPU Instanced renderer ready");
+            // Debug.Log("[RiceBallRendererECS] GPU Instanced renderer ready");
         }
         
         private void Update()

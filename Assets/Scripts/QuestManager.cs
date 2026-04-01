@@ -58,7 +58,7 @@ namespace Vampire.DropPuzzle
             quests.Clear();
             currentQuest = null;
             
-            Debug.Log("[QuestManager] Initialized - State cleared");
+            // Debug.Log("[QuestManager] Initialized - State cleared");
         }
         
         /// <summary>
@@ -68,7 +68,7 @@ namespace Vampire.DropPuzzle
         {
             quests.Clear();
             currentQuest = null;
-            Debug.Log("[QuestManager] All quests reset");
+            // Debug.Log("[QuestManager] All quests reset");
         }
         
         /// <summary>
@@ -89,7 +89,7 @@ namespace Vampire.DropPuzzle
             };
             
             quests.Add(quest);
-            Debug.Log($"[QuestManager] Added quest: {questId} - Title:'{title}' Desc:'{description}' Target:{targetValue}");
+            // Debug.Log($"[QuestManager] Added quest: {questId} - Title:'{title}' Desc:'{description}' Target:{targetValue}");
         }
         
         /// <summary>
@@ -100,21 +100,21 @@ namespace Vampire.DropPuzzle
             Quest quest = quests.Find(q => q.questId == questId);
             if (quest == null)
             {
-                Debug.LogError($"[QuestManager] Quest not found: {questId}");
+                // Debug.LogError($"[QuestManager] Quest not found: {questId}");
                 return;
             }
             
             // If trying to start the same quest that's already active, ignore
             if (currentQuest != null && currentQuest.questId == questId && !currentQuest.isComplete)
             {
-                Debug.Log($"[QuestManager] Quest already active: {questId}");
+                // Debug.Log($"[QuestManager] Quest already active: {questId}");
                 return;
             }
             
             // If different quest is active and not complete, warn
             if (currentQuest != null && !currentQuest.isComplete && currentQuest.questId != questId)
             {
-                Debug.LogWarning($"[QuestManager] Another quest already active: '{currentQuest.questId}' (trying to start '{questId}'). Complete it first.");
+                // Debug.LogWarning($"[QuestManager] Another quest already active: '{currentQuest.questId}' (trying to start '{questId}'). Complete it first.");
                 return;
             }
             
@@ -124,7 +124,7 @@ namespace Vampire.DropPuzzle
             // Initialize quest progress from lifetime stats (don't reset to 0!)
             InitializeQuestProgressFromLifetimeStats(quest);
             
-            Debug.Log($"[QuestManager] ✨ Quest Started: '{quest.title}' | Desc: '{quest.description}' | Progress: {quest.currentValue}/{quest.targetValue}");
+            // Debug.Log($"[QuestManager] ✨ Quest Started: '{quest.title}' | Desc: '{quest.description}' | Progress: {quest.currentValue}/{quest.targetValue}");
             OnQuestStarted?.Invoke(quest);
         }
         
@@ -138,7 +138,7 @@ namespace Vampire.DropPuzzle
             
             currentQuest.currentValue += amount;
             
-            Debug.Log($"[QuestManager] Quest Progress: {currentQuest.title} - {currentQuest.currentValue}/{currentQuest.targetValue}");
+            // Debug.Log($"[QuestManager] Quest Progress: {currentQuest.title} - {currentQuest.currentValue}/{currentQuest.targetValue}");
             OnQuestProgress?.Invoke(currentQuest);
             
             // Check if complete
@@ -162,12 +162,12 @@ namespace Vampire.DropPuzzle
             {
                 case QuestType.CraftRiceBalls:
                     quest.currentValue = playerData.TotalRiceBallsCrafted;
-                    Debug.Log($"[QuestManager] Initialized CraftRiceBalls quest from lifetime stats: {quest.currentValue}/{quest.targetValue}");
+                    // Debug.Log($"[QuestManager] Initialized CraftRiceBalls quest from lifetime stats: {quest.currentValue}/{quest.targetValue}");
                     break;
                     
                 case QuestType.CollectCurrency:
                     quest.currentValue = playerData.TotalCurrencyEarned;
-                    Debug.Log($"[QuestManager] Initialized CollectCurrency quest from lifetime stats: {quest.currentValue}/{quest.targetValue}");
+                    // Debug.Log($"[QuestManager] Initialized CollectCurrency quest from lifetime stats: {quest.currentValue}/{quest.targetValue}");
                     break;
                     
                 // Other quest types start from 0 (time-based or one-time actions)
@@ -179,7 +179,7 @@ namespace Vampire.DropPuzzle
             // Auto-complete if already at target
             if (quest.currentValue >= quest.targetValue)
             {
-                Debug.Log($"[QuestManager] Quest '{quest.title}' already complete from prior progress!");
+                // Debug.Log($"[QuestManager] Quest '{quest.title}' already complete from prior progress!");
             }
         }
         
@@ -193,7 +193,7 @@ namespace Vampire.DropPuzzle
             currentQuest.isComplete = true;
             currentQuest.isActive = false;
             
-            Debug.Log($"[QuestManager] ✅ Quest Complete: {currentQuest.title}");
+            // Debug.Log($"[QuestManager] ✅ Quest Complete: {currentQuest.title}");
             OnQuestCompleted?.Invoke(currentQuest);
         }
         

@@ -26,7 +26,7 @@ namespace Vampire.DropPuzzle
 
         private void Start()
         {
-            Debug.Log("[ManualPuzzleBuilder] Starting manual puzzle build...");
+            // Debug.Log("[ManualPuzzleBuilder] Starting manual puzzle build...");
             BuildPuzzle();
         }
 
@@ -59,7 +59,7 @@ namespace Vampire.DropPuzzle
             }
 
             spawnedObjects.Add(background);
-            Debug.Log($"[ManualPuzzleBuilder] Created background at {BackgroundPosition}");
+            // Debug.Log($"[ManualPuzzleBuilder] Created background at {BackgroundPosition}");
         }
 
         private void CreateWalls()
@@ -134,7 +134,7 @@ namespace Vampire.DropPuzzle
             GoalGate goalComponent = goal.AddComponent<GoalGate>();
             
             spawnedObjects.Add(goal);
-            Debug.Log($"[ManualPuzzleBuilder] Created goal at {goalPosition}");
+            // Debug.Log($"[ManualPuzzleBuilder] Created goal at {goalPosition}");
         }
 
         private void CreateWall(Vector3 position, float rotationZ, string wallName)
@@ -178,7 +178,7 @@ namespace Vampire.DropPuzzle
             wall.transform.SetParent(transform);
             spawnedObjects.Add(wall);
             
-            Debug.Log($"[ManualPuzzleBuilder] Created {wallName} at {position}");
+            // Debug.Log($"[ManualPuzzleBuilder] Created {wallName} at {position}");
         }
 
         private void CreateDropZone(Vector3 position, string zoneName)
@@ -204,7 +204,7 @@ namespace Vampire.DropPuzzle
             dropZone.transform.SetParent(transform);
             spawnedObjects.Add(dropZone);
             
-            Debug.Log($"[ManualPuzzleBuilder] Created {zoneName} at {position}");
+            // Debug.Log($"[ManualPuzzleBuilder] Created {zoneName} at {position}");
         }
 
         public void ClearPuzzle()
@@ -214,7 +214,7 @@ namespace Vampire.DropPuzzle
                 if (obj != null) DestroyImmediate(obj);
             }
             spawnedObjects.Clear();
-            Debug.Log("[ManualPuzzleBuilder] Cleared previous puzzle elements");
+            // Debug.Log("[ManualPuzzleBuilder] Cleared previous puzzle elements");
         }
 
         // Button in inspector to rebuild during development

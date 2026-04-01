@@ -19,7 +19,7 @@ namespace Vampire.Helpers
         
         [Header("Deployment Settings")]
         public float spawnHeightOffset = 1f;
-        public bool enableDebugLogging = true;
+        public bool enableDebugLogging = false;
         
         [Header("Auto Collection")]
         public bool enablePassiveGeneration = true;
@@ -61,7 +61,7 @@ namespace Vampire.Helpers
             // Load any saved deployed helpers
             LoadDeployedHelpers();
             
-            Debug.Log("[HelperDeploymentSystem] System initialized");
+            // Debug.Log("[HelperDeploymentSystem] System initialized");
         }
         
         private void OnDestroy()
@@ -92,7 +92,7 @@ namespace Vampire.Helpers
             var zone = ZoneManager.GetZone(zoneId);
             if (zone == null)
             {
-                Debug.LogError($"[HelperDeploymentSystem] Zone '{zoneId}' not found!");
+                // Debug.LogError($"[HelperDeploymentSystem] Zone '{zoneId}' not found!");
                 return false;
             }
             
@@ -100,7 +100,7 @@ namespace Vampire.Helpers
             var currentHelpersInZone = GetHelpersInZone(zoneId);
             if (currentHelpersInZone.Count >= zone.maxHelpersAllowed)
             {
-                Debug.LogWarning($"[HelperDeploymentSystem] Zone '{zoneId}' is at maximum helper capacity ({zone.maxHelpersAllowed})");
+                // Debug.LogWarning($"[HelperDeploymentSystem] Zone '{zoneId}' is at maximum helper capacity ({zone.maxHelpersAllowed})");
                 return false;
             }
             
@@ -119,7 +119,7 @@ namespace Vampire.Helpers
             GameObject helperPrefab = GetHelperPrefab(helperType);
             if (helperPrefab == null)
             {
-                Debug.LogError($"[HelperDeploymentSystem] No prefab found for {helperType} helper!");
+                // Debug.LogError($"[HelperDeploymentSystem] No prefab found for {helperType} helper!");
                 return false;
             }
             
@@ -128,7 +128,7 @@ namespace Vampire.Helpers
             
             if (helperAI == null)
             {
-                Debug.LogError("[HelperDeploymentSystem] Helper prefab missing HelperAI component!");
+                // Debug.LogError("[HelperDeploymentSystem] Helper prefab missing HelperAI component!");
                 Destroy(helperObj);
                 return false;
             }
@@ -150,7 +150,7 @@ namespace Vampire.Helpers
             
             if (enableDebugLogging)
             {
-                Debug.Log($"[HelperDeploymentSystem] Deployed {helperType} helper '{helperAI.helperId}' to zone '{zoneId}' at {deployPosition}");
+                // Debug.Log($"[HelperDeploymentSystem] Deployed {helperType} helper '{helperAI.helperId}' to zone '{zoneId}' at {deployPosition}");
             }
             
             return true;
@@ -163,7 +163,7 @@ namespace Vampire.Helpers
         {
             if (!activeHelpers.ContainsKey(helperId))
             {
-                Debug.LogWarning($"[HelperDeploymentSystem] Helper '{helperId}' not found for recall");
+                // Debug.LogWarning($"[HelperDeploymentSystem] Helper '{helperId}' not found for recall");
                 return false;
             }
             
@@ -191,7 +191,7 @@ namespace Vampire.Helpers
             
             if (enableDebugLogging)
             {
-                Debug.Log($"[HelperDeploymentSystem] Recalled helper '{helperId}'");
+                // Debug.Log($"[HelperDeploymentSystem] Recalled helper '{helperId}'");
             }
             
             return true;
@@ -215,7 +215,7 @@ namespace Vampire.Helpers
             
             if (enableDebugLogging)
             {
-                Debug.Log($"[HelperDeploymentSystem] Recalled {recallCount} helpers from zone '{zoneId}'");
+                // Debug.Log($"[HelperDeploymentSystem] Recalled {recallCount} helpers from zone '{zoneId}'");
             }
             
             return recallCount;
@@ -239,7 +239,7 @@ namespace Vampire.Helpers
             
             if (enableDebugLogging)
             {
-                Debug.Log($"[HelperDeploymentSystem] Recalled all helpers ({recallCount} total)");
+                // Debug.Log($"[HelperDeploymentSystem] Recalled all helpers ({recallCount} total)");
             }
             
             return recallCount;
@@ -301,7 +301,7 @@ namespace Vampire.Helpers
             // Check if player data is available
             if (playerData == null)
             {
-                Debug.LogError("[HelperDeploymentSystem] PlayerData not available!");
+                // Debug.LogError("[HelperDeploymentSystem] PlayerData not available!");
                 return false;
             }
             
@@ -312,21 +312,21 @@ namespace Vampire.Helpers
                 
             if (ownedCount <= 0)
             {
-                Debug.LogWarning($"[HelperDeploymentSystem] Player doesn't own any {helperType} helpers!");
+                // Debug.LogWarning($"[HelperDeploymentSystem] Player doesn't own any {helperType} helpers!");
                 return false;
             }
             
             // Check if already at max deployed helpers
             if (GetTotalDeployedHelpers() >= playerData.Helpers.GetMaxHelpers())
             {
-                Debug.LogWarning($"[HelperDeploymentSystem] At maximum helper deployment capacity ({playerData.Helpers.GetMaxHelpers()})");
+                // Debug.LogWarning($"[HelperDeploymentSystem] At maximum helper deployment capacity ({playerData.Helpers.GetMaxHelpers()})");
                 return false;
             }
             
             // Check if zone is unlocked
             if (!playerData.Helpers.unlockedZones.Contains(zoneId))
             {
-                Debug.LogWarning($"[HelperDeploymentSystem] Zone '{zoneId}' is not unlocked!");
+                // Debug.LogWarning($"[HelperDeploymentSystem] Zone '{zoneId}' is not unlocked!");
                 return false;
             }
             
@@ -411,7 +411,7 @@ namespace Vampire.Helpers
                         
                         if (enableDebugLogging && Time.frameCount % 300 == 0) // Log every 5 seconds
                         {
-                            Debug.Log($"[HelperDeploymentSystem] Passive generation: +{passiveRice} rice from {activeHelpers.Count} helpers");
+                            // Debug.Log($"[HelperDeploymentSystem] Passive generation: +{passiveRice} rice from {activeHelpers.Count} helpers");
                         }
                     }
                 }
@@ -444,7 +444,7 @@ namespace Vampire.Helpers
             
             if (enableDebugLogging)
             {
-                Debug.Log($"[HelperDeploymentSystem] Saved {activeHelpers.Count} deployed helpers");
+                // Debug.Log($"[HelperDeploymentSystem] Saved {activeHelpers.Count} deployed helpers");
             }
         }
         
@@ -477,7 +477,7 @@ namespace Vampire.Helpers
             
             if (restoredCount > 0 && enableDebugLogging)
             {
-                Debug.Log($"[HelperDeploymentSystem] Restored {restoredCount} deployed helpers");
+                // Debug.Log($"[HelperDeploymentSystem] Restored {restoredCount} deployed helpers");
             }
         }
         
@@ -515,13 +515,13 @@ namespace Vampire.Helpers
         {
             var status = GetSystemStatus();
             
-            Debug.Log("=== Helper Deployment System Status ===");
-            Debug.Log($"Owned Helpers: {status.totalOwnedHelpers}");
-            Debug.Log($"Deployed: {status.currentlyDeployed}/{status.maxDeployableHelpers}");
-            Debug.Log($"Goblins: {status.goblinsDeployed}, Ghouls: {status.ghoulsDeployed}");
-            Debug.Log($"Active Zones: {string.Join(", ", status.activeZones)}");
-            Debug.Log($"Efficiency Rate: {status.currentEfficiencyRate:F1} rice/second");
-            Debug.Log("=========================================");
+            // Debug.Log("=== Helper Deployment System Status ===");
+            // Debug.Log($"Owned Helpers: {status.totalOwnedHelpers}");
+            // Debug.Log($"Deployed: {status.currentlyDeployed}/{status.maxDeployableHelpers}");
+            // Debug.Log($"Goblins: {status.goblinsDeployed}, Ghouls: {status.ghoulsDeployed}");
+            // Debug.Log($"Active Zones: {string.Join(", ", status.activeZones)}");
+            // Debug.Log($"Efficiency Rate: {status.currentEfficiencyRate:F1} rice/second");
+            // Debug.Log("=========================================");
         }
         
         private void OnDrawGizmos()
@@ -555,7 +555,7 @@ namespace Vampire.Helpers
                 return Instance.DeployHelper(type, zoneId);
             }
             
-            Debug.LogError("[HelperDeploymentSystem] No instance available for QuickDeploy!");
+            // Debug.LogError("[HelperDeploymentSystem] No instance available for QuickDeploy!");
             return false;
         }
         
@@ -569,7 +569,7 @@ namespace Vampire.Helpers
                 return Instance.RecallHelper(helperId);
             }
             
-            Debug.LogError("[HelperDeploymentSystem] No instance available for QuickRecall!");
+            // Debug.LogError("[HelperDeploymentSystem] No instance available for QuickRecall!");
             return false;
         }
         

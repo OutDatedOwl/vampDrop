@@ -125,7 +125,7 @@ namespace Vampire.Player
             }
             else
             {
-                Debug.LogWarning("[FPSAudioManager] Multiple instances detected! Destroying duplicate.");
+                // Debug.LogWarning("[FPSAudioManager] Multiple instances detected! Destroying duplicate.");
                 Destroy(gameObject);
                 return;
             }
@@ -397,7 +397,7 @@ namespace Vampire.Player
             }
             else
             {
-                Debug.Log($"[FPSAudioManager] Walking sound already playing correctly: {soundToPlay.name}");
+                // Debug.Log($"[FPSAudioManager] Walking sound already playing correctly: {soundToPlay.name}");
             }
         }
         
@@ -415,7 +415,7 @@ namespace Vampire.Player
             }
             else if (wasPlaying)
             {
-                Debug.Log("[FPSAudioManager] Walking sound was already stopped");
+                // Debug.Log("[FPSAudioManager] Walking sound was already stopped");
             }
         }
         
@@ -470,7 +470,7 @@ namespace Vampire.Player
                 riceObjects = new Collider[0];
                 if (Time.frameCount % 300 == 0)
                 {
-                    Debug.LogWarning("[FPSAudioManager] Skipping Unity collider detection - fix riceLayerMask in Inspector!");
+                    // Debug.LogWarning("[FPSAudioManager] Skipping Unity collider detection - fix riceLayerMask in Inspector!");
                 }
             }
             
@@ -490,7 +490,7 @@ namespace Vampire.Player
                     // Silently handle ECS not being available
                     if (Time.frameCount % 300 == 0) // Log occasionally
                     {
-                        Debug.LogWarning($"[FPSAudioManager] ECS rice detection failed: {e.Message}");
+                        // Debug.LogWarning($"[FPSAudioManager] ECS rice detection failed: {e.Message}");
                     }
                 }
             }
@@ -507,7 +507,7 @@ namespace Vampire.Player
                 
                 if (Time.frameCount % 300 == 0)
                 {
-                    Debug.Log("[FPSAudioManager] forceGroundAudio enabled - using ground sound only");
+                    // Debug.Log("[FPSAudioManager] forceGroundAudio enabled - using ground sound only");
                 }
             }
             else
@@ -518,7 +518,7 @@ namespace Vampire.Player
                 // Extra validation: if we detect rice but layer mask is wrong, ignore it
                 if (isWalkingOnRice && riceLayerMask.value == -1)
                 {
-                    Debug.LogWarning("[FPSAudioManager] Ignoring rice detection due to invalid layer mask (-1)");
+                    // Debug.LogWarning("[FPSAudioManager] Ignoring rice detection due to invalid layer mask (-1)");
                     isWalkingOnRice = false;
                 }
             }
@@ -542,7 +542,7 @@ namespace Vampire.Player
                 // Warning if layer mask looks wrong
                 if (riceLayerMask.value == -1)
                 {
-                    Debug.LogError("[FPSAudioManager] ⚠️ riceLayerMask is -1 (ALL LAYERS)! Set it to a specific rice layer in Inspector!");
+                    // Debug.LogError("[FPSAudioManager] ⚠️ riceLayerMask is -1 (ALL LAYERS)! Set it to a specific rice layer in Inspector!");
                 }
             }
             
@@ -731,49 +731,49 @@ namespace Vampire.Player
         /// </summary>
         public void ValidateAudioSetup()
         {
-            Debug.Log("===== FPS Audio Manager Validation =====");
-            Debug.Log($"Walking Sound: {(walkingSound != null ? $"✓ {walkingSound.name}" : "✗ Missing")}");
-            Debug.Log($"Rice Walking Sound: {(walkingOnRiceSound != null ? $"✓ {walkingOnRiceSound.name}" : "✗ Missing")}");
-            Debug.Log($"Jump Sound: {(jumpSound != null ? $"✓ {jumpSound.name}" : "✗ Missing")}");
-            Debug.Log($"Land Sound: {(landSound != null ? $"✓ {landSound.name}" : "✗ Missing")}");
-            Debug.Log($"Background Music: {(backgroundMusic != null ? $"✓ {backgroundMusic.name}" : "✗ Missing")}");
-            Debug.Log($"Rice Pickup Sound: {(ricePickupSound != null ? $"✓ {ricePickupSound.name}" : "✗ Missing")}");
+            // Debug.Log("===== FPS Audio Manager Validation =====");
+            // Debug.Log($"Walking Sound: {(walkingSound != null ? $"✓ {walkingSound.name}" : "✗ Missing")}");
+            // Debug.Log($"Rice Walking Sound: {(walkingOnRiceSound != null ? $"✓ {walkingOnRiceSound.name}" : "✗ Missing")}");
+            // Debug.Log($"Jump Sound: {(jumpSound != null ? $"✓ {jumpSound.name}" : "✗ Missing")}");
+            // Debug.Log($"Land Sound: {(landSound != null ? $"✓ {landSound.name}" : "✗ Missing")}");
+            // Debug.Log($"Background Music: {(backgroundMusic != null ? $"✓ {backgroundMusic.name}" : "✗ Missing")}");
+            // Debug.Log($"Rice Pickup Sound: {(ricePickupSound != null ? $"✓ {ricePickupSound.name}" : "✗ Missing")}");
             
-            Debug.Log($"Music Source: {(musicSource != null ? $"✓ Volume: {musicSource.volume:F2}" : "✗ Missing")}");
-            Debug.Log($"Footstep Source: {(footstepSource != null ? $"✓ Volume: {footstepSource.volume:F2}" : "✗ Missing")}");
-            Debug.Log($"SFX Source: {(sfxSource != null ? $"✓ Volume: {sfxSource.volume:F2}" : "✗ Missing")}");
+            // Debug.Log($"Music Source: {(musicSource != null ? $"✓ Volume: {musicSource.volume:F2}" : "✗ Missing")}");
+            // Debug.Log($"Footstep Source: {(footstepSource != null ? $"✓ Volume: {footstepSource.volume:F2}" : "✗ Missing")}");
+            // Debug.Log($"SFX Source: {(sfxSource != null ? $"✓ Volume: {sfxSource.volume:F2}" : "✗ Missing")}");
             
-            Debug.Log($"Master Volume: {masterVolume:F2}");
-            Debug.Log($"Footstep Volume: {footstepVolume:F2}");
-            Debug.Log($"Ground Boost: {groundWalkingVolumeBoost:F2}");
-            Debug.Log($"Rice Boost: {riceWalkingVolumeBoost:F2}");
-            Debug.Log($"Rice Detection - Radius: {riceDetectionRadius:F2}, Min Count: {minRiceCountForWalking}, Direct Below: {onlyCheckDirectlyBelow}");
-            Debug.Log($"Layer Mask: {riceLayerMask.value} (Layer {GetFirstLayerFromMask(riceLayerMask)}), Rice Tag: '{riceTag}'");
+            // Debug.Log($"Master Volume: {masterVolume:F2}");
+            // Debug.Log($"Footstep Volume: {footstepVolume:F2}");
+            // Debug.Log($"Ground Boost: {groundWalkingVolumeBoost:F2}");
+            // Debug.Log($"Rice Boost: {riceWalkingVolumeBoost:F2}");
+            // Debug.Log($"Rice Detection - Radius: {riceDetectionRadius:F2}, Min Count: {minRiceCountForWalking}, Direct Below: {onlyCheckDirectlyBelow}");
+            // Debug.Log($"Layer Mask: {riceLayerMask.value} (Layer {GetFirstLayerFromMask(riceLayerMask)}), Rice Tag: '{riceTag}'");
             
             // Critical layer mask validation
             if (riceLayerMask.value == -1)
             {
-                Debug.LogError("❌ CRITICAL: riceLayerMask is -1 (ALL LAYERS)! This will detect everything as rice!");
-                Debug.LogError("💡 FIX: Set riceLayerMask to a specific layer in Inspector (e.g., Layer 8 for Rice objects)");
+                // Debug.LogError("❌ CRITICAL: riceLayerMask is -1 (ALL LAYERS)! This will detect everything as rice!");
+                // Debug.LogError("💡 FIX: Set riceLayerMask to a specific layer in Inspector (e.g., Layer 8 for Rice objects)");
             }
             else if (riceLayerMask.value == 0)
             {
-                Debug.LogWarning("⚠️ riceLayerMask is 0 (nothing). Make sure rice objects are on a specific layer.");
+                // Debug.LogWarning("⚠️ riceLayerMask is 0 (nothing). Make sure rice objects are on a specific layer.");
             }
             else
             {
-                Debug.Log($"✅ Layer mask correctly set to layer {GetFirstLayerFromMask(riceLayerMask)}");
+                // Debug.Log($"✅ Layer mask correctly set to layer {GetFirstLayerFromMask(riceLayerMask)}");
             }
             
-            Debug.Log($"Force Ground Audio: {(forceGroundAudio ? "✅ ENABLED (rice audio disabled)" : "❌ Disabled")}");
-            Debug.Log($"Performance - Rice Check Interval: {riceCheckInterval} frames, ECS Detection: {!disableECSRiceDetection}");
+            // Debug.Log($"Force Ground Audio: {(forceGroundAudio ? "✅ ENABLED (rice audio disabled)" : "❌ Disabled")}");
+            // Debug.Log($"Performance - Rice Check Interval: {riceCheckInterval} frames, ECS Detection: {!disableECSRiceDetection}");
             
             // Quick troubleshooting guide
             if (riceLayerMask.value == -1)
             {
-                Debug.LogError("🚨 QUICK FIX: Set 'Force Ground Audio' to true to disable rice detection entirely!");
+                // Debug.LogError("🚨 QUICK FIX: Set 'Force Ground Audio' to true to disable rice detection entirely!");
             }
-            Debug.Log("=====================================");
+            // Debug.Log("=====================================");
         }
         
         /// <summary>
@@ -781,9 +781,9 @@ namespace Vampire.Player
         /// </summary>
         public void DebugPerformance()
         {
-            Debug.Log("===== Performance Debug =====");
-            Debug.Log($"Current FPS: {1.0f / Time.deltaTime:F1}");
-            Debug.Log($"Frame time: {Time.deltaTime * 1000:F1}ms");
+            // Debug.Log("===== Performance Debug =====");
+            // Debug.Log($"Current FPS: {1.0f / Time.deltaTime:F1}");
+            // Debug.Log($"Frame time: {Time.deltaTime * 1000:F1}ms");
             
             // Test ECS rice counting performance
             if (!disableECSRiceDetection)
@@ -794,20 +794,20 @@ namespace Vampire.Player
                 {
                     int riceCount = CountECSRiceNearPlayer(entityManager.Value, transform.position);
                     var duration = (System.DateTime.Now - startTime).TotalMilliseconds;
-                    Debug.Log($"ECS Rice Count: {riceCount} (took {duration:F2}ms)");
+                    // Debug.Log($"ECS Rice Count: {riceCount} (took {duration:F2}ms)");
                 }
             }
             
-            Debug.LogWarning("If frame time is >16ms (60fps) or >33ms (30fps), performance is poor!");
-            Debug.Log("Try: Increase riceCheckInterval or disable ECS rice detection");
+            // Debug.LogWarning("If frame time is >16ms (60fps) or >33ms (30fps), performance is poor!");
+            // Debug.Log("Try: Increase riceCheckInterval or disable ECS rice detection");
             
             // Additional audio detection warnings
             if (riceLayerMask.value == -1)
             {
-                Debug.LogError("❌ AUDIO BUG: riceLayerMask=-1 will cause false rice detection!");
+                // Debug.LogError("❌ AUDIO BUG: riceLayerMask=-1 will cause false rice detection!");
             }
             
-            Debug.Log("============================");
+            // Debug.Log("============================");
         }
     }
 }

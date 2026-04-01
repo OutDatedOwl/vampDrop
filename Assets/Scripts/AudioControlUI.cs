@@ -64,7 +64,7 @@ namespace Vampire.Player
                 muteToggle.onValueChanged.AddListener(OnMuteToggleChanged);
             }
             
-            Debug.Log("[AudioControlUI] Initialized");
+            // Debug.Log("[AudioControlUI] Initialized");
         }
         
         private void Update()
@@ -132,7 +132,7 @@ namespace Vampire.Player
                 Cursor.visible = false;
             }
             
-            Debug.Log($"[AudioControlUI] Panel {(isPanelOpen ? "opened" : "closed")}");
+            // Debug.Log($"[AudioControlUI] Panel {(isPanelOpen ? "opened" : "closed")}");
         }
         
         /// <summary>

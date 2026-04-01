@@ -27,7 +27,7 @@ namespace Vampire.Rice
     {
         public override void Bake(RiceAuthoring authoring)
         {
-            UnityEngine.Debug.Log($"[RiceEntityBaker] BAKING Rice prefab with CollectionRadius={authoring.CollectionRadius}");
+            // UnityEngine.Debug.Log($"[RiceEntityBaker] BAKING Rice prefab with CollectionRadius={authoring.CollectionRadius}");
             
             var entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent(entity, new RiceEntity
@@ -39,7 +39,7 @@ namespace Vampire.Rice
             AddComponent(entity, new RiceHighlighted());
             SetComponentEnabled<RiceHighlighted>(entity, false);
             
-            UnityEngine.Debug.Log($"[RiceEntityBaker] ✅ RiceEntity + RiceHighlighted components added");
+           // // UnityEngine.Debug.Log($"[RiceEntityBaker] ✅ RiceEntity + RiceHighlighted components added");
         }
     }
 }

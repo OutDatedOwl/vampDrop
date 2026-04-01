@@ -1,120 +1,129 @@
 using Unity.Entities;
 using Unity.Transforms;
+using Unity.Rendering;
 using Unity.Collections;
-using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Vampire.Rice
 {
     /// <summary>
-    /// High-performance GPU instanced rendering for rice entities using RenderMeshArray
-    /// Optimized for 100k+ entities with actual rice mesh
-    /// 
-    /// SETUP:
-    /// 1. Add RiceRenderingConfig component to a GameObject in your scene
-    /// 2. Drag rice_grain.stl.obj to the RiceMesh field
-    /// 3. Assign a material (or it will create one automatically)
+    /// Adds render components to rice ECS entities so they are visible.
+    ///
+    /// ARCHITECTURE NOTE:
+    ///   Rice entities are spawned by RiceSpawnSystem with only RiceEntity + LocalTransform.
+    ///   This system runs in PresentationSystemGroup and adds MaterialMeshInfo + all
+    ///   required Hybrid Renderer components so DOTS renders them via GPU instancing.
+    ///
+    ///   The query targets entities WITHOUT MaterialMeshInfo, so it only processes
+    ///   each entity ONCE (on first appearance). After that the query is empty = zero cost.
     /// </summary>
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class RiceGPURenderer : SystemBase
     {
-        private Mesh riceMesh;
-        private Material riceMaterial;
-        private float riceScale;
-        private bool hasWarnedAboutConfig = false;
+        private EntityQuery _uninitializedQuery;  // rice with no render components yet
+        private EntityQuery _parentedQuery;        // rice still parented (needs detach)
+
+        private RenderMeshArray  _renderMeshArray;
+        private RenderMeshDescription _renderDesc;
+        private bool   _renderDataReady;
+        private Material _cachedMaterial;
+        private Mesh     _cachedMesh;
 
         protected override void OnCreate()
         {
-            // Debug.Log("[RiceGPURenderer] Creating optimized GPU renderer with RenderMeshArray...");
+            // Rice that exists but has no renderer yet
+            _uninitializedQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All  = new ComponentType[] { typeof(RiceEntity), typeof(LocalTransform) },
+                None = new ComponentType[] { typeof(MaterialMeshInfo) }
+            });
+
+            // Rice that still has a Parent component (from prefab hierarchy)
+            _parentedQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new ComponentType[] { typeof(RiceEntity), typeof(Parent) }
+            });
+
+            _renderDesc = new RenderMeshDescription(
+                ShadowCastingMode.Off,
+                receiveShadows: false,
+                lightProbeUsage: LightProbeUsage.Off
+            );
         }
 
         protected override void OnUpdate()
         {
-            // Get rendering config
             var config = RiceRenderingConfig.Instance;
             if (config == null)
             {
-                if (!hasWarnedAboutConfig)
-                {
-                    Debug.LogError("[RiceGPURenderer] ❌ No RiceRenderingConfig found in scene! Add it to a GameObject and assign the rice mesh.");
-                    hasWarnedAboutConfig = true;
-                }
                 return;
             }
 
-            // Load mesh and material from config (only once or when changed)
-            if (riceMesh != config.RiceMesh || riceMaterial != config.RiceMaterial)
+            if (config.RiceMesh == null)
             {
-                riceMesh = config.RiceMesh;
-                riceMaterial = config.RiceMaterial;
-                riceScale = config.Scale;
-                
-                if (riceMesh != null)
-                {
-                    Debug.Log($"[RiceGPURenderer] ✅ Using mesh: {riceMesh.name} ({riceMesh.vertexCount} vertices)");
-                }
-            }
-
-            if (riceMesh == null || riceMaterial == null)
-            {
+                // Debug.LogError("[RiceGPURenderer] RiceMesh is NULL on RiceRenderingConfig! Assign a mesh.");
                 return;
             }
 
-            // Collect all rice transforms
-            var riceQuery = GetEntityQuery(typeof(RiceEntity), typeof(LocalTransform));
-            int riceCount = riceQuery.CalculateEntityCount();
-            
-            if (riceCount == 0) return;
-
-            // Get all transforms as arrays
-            var transforms = riceQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
-            
-            // Batch rendering (max 1023 instances per draw call)
-            int batchSize = 1023;
-            int numBatches = (riceCount + batchSize - 1) / batchSize;
-            
-            Matrix4x4[] matrices = new Matrix4x4[Mathf.Min(batchSize, riceCount)];
-            
-            for (int batch = 0; batch < numBatches; batch++)
+            if (config.RiceMaterial == null)
             {
-                int startIdx = batch * batchSize;
-                int count = Mathf.Min(batchSize, riceCount - startIdx);
-                
-                // Fill matrices for this batch
-                for (int i = 0; i < count; i++)
-                {
-                    var transform = transforms[startIdx + i];
-                    matrices[i] = Matrix4x4.TRS(
-                        transform.Position,
-                        transform.Rotation,
-                        new Vector3(riceScale, riceScale, riceScale)
-                    );
-                }
-                
-                // Draw this batch using the configured mesh
-                Graphics.DrawMeshInstanced(
-                    riceMesh,
-                    0,
-                    riceMaterial,
-                    matrices,
-                    count,
-                    null,
-                    UnityEngine.Rendering.ShadowCastingMode.Off,
-                    receiveShadows: false,
-                    layer: 0,
-                    null,
-                    UnityEngine.Rendering.LightProbeUsage.Off
+                // Debug.LogError("[RiceGPURenderer] RiceMaterial is NULL on RiceRenderingConfig! Assign a material.");
+                return;
+            }
+
+            // ── Step 1: Detach any parented rice (batch, no loop) ────────────
+            if (!_parentedQuery.IsEmpty)
+            {
+                EntityManager.RemoveComponent<Parent>(_parentedQuery);
+            }
+
+            // ── Step 2: Skip if nothing needs rendering ──────────────────────
+            if (_uninitializedQuery.IsEmpty) return;
+
+            int count = _uninitializedQuery.CalculateEntityCount();
+            // Debug.Log($"[RiceGPURenderer] Adding render components to {count} rice entities...");
+
+            // ── Step 3: Rebuild render data if config changed ────────────────
+            if (!_renderDataReady || _cachedMaterial != config.RiceMaterial || _cachedMesh != config.RiceMesh)
+            {
+                _renderMeshArray = new RenderMeshArray(
+                    new[] { config.RiceMaterial },
+                    new[] { config.RiceMesh }
                 );
+                _cachedMaterial   = config.RiceMaterial;
+                _cachedMesh       = config.RiceMesh;
+                _renderDataReady  = true;
+                // Debug.Log($"[RiceGPURenderer] Render data built. Mesh={config.RiceMesh.name}, Mat={config.RiceMaterial.name}, Scale={config.Scale}");
             }
-            
-            transforms.Dispose();
-        }
 
-        protected override void OnDestroy()
-        {
-            // Config owns the mesh and material, don't destroy them
-            riceMesh = null;
-            riceMaterial = null;
+            // ── Step 4: Add render + set scale ───────────────────────────────
+            // RenderMeshUtility.AddComponents does structural changes, so we must
+            // iterate a snapshot of the entity array (not a live query iterator).
+            var entities = _uninitializedQuery.ToEntityArray(Allocator.Temp);
+
+            foreach (var entity in entities)
+            {
+                // Skip the prefab template entity itself
+                if (EntityManager.HasComponent<Unity.Entities.Prefab>(entity)) continue;
+
+                RenderMeshUtility.AddComponents(
+                    entity,
+                    EntityManager,
+                    _renderDesc,
+                    _renderMeshArray,
+                    MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0)
+                );
+
+                // Set scale from config (e.g. 0.03)
+                var t = EntityManager.GetComponentData<LocalTransform>(entity);
+                t.Scale = config.Scale;
+                EntityManager.SetComponentData(entity, t);
+            }
+
+            entities.Dispose();
+
+            // Debug.Log($"[RiceGPURenderer] ✅ Done. Rice should now be visible.");
         }
     }
 }

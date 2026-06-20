@@ -16,7 +16,7 @@ TagManager:
   - Wall
   - Rice
   - RiceBall
-  - 
+  - SPEEDLINES
   - 
   - 
   - 
@@ -42,6 +42,9 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: SPEEEDLINES_SORT
+    uniqueID: 3912016409
     locked: 0
   m_RenderingLayers:
   - Default

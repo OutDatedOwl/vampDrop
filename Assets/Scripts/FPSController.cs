@@ -12,6 +12,11 @@ namespace Vampire.Player
         [Header("Audio")]
         public FPSAudioManager audioManager;
 
+        [Header("Run Particles")]
+        [Tooltip("Transform used to position running particles from the inspector")]
+        public Transform runParticlesOrigin;
+        public ParticleSystem runParticleSystem;
+
         [Header("Movement Settings")]
         public float walkSpeed = 7f;
         public float runSpeed = 12f;
@@ -41,6 +46,19 @@ namespace Vampire.Player
         [Tooltip("Enable detailed ground detection logging")]
         public bool debugGroundDetection = false;
 
+        [Header("Ground Detection State (Debug)")]
+        [Tooltip("Detect")]
+        public bool isGrounded = false;
+
+        [Header("Runtime Debug")]
+        [Tooltip("Shows whether the player pressed jump this frame (read/write at runtime)")]
+        [SerializeField]
+        private bool jumping = false;
+
+        [Tooltip("Shows whether the raycast ground check is true this frame")]
+        [SerializeField]
+        private bool raycastGrounded = false;
+
         // Private variables
         private CharacterController controller;
         private float defaultHeight;
@@ -49,7 +67,7 @@ namespace Vampire.Player
         private float xRotation = 0f;
         private float smoothMouseX = 0f;
         private float smoothMouseY = 0f;
-        private bool isGrounded;
+        //private bool isGrounded = false;
         private float lastJumpTime = -999f; // Track last jump time for cooldown
 
         void Start()
@@ -116,17 +134,15 @@ namespace Vampire.Player
         void ProcessMovement()
         {
             // Ground check with enhanced debugging
-            Vector3 groundCheckPos = transform.position + Vector3.up * groundCheckRadius;
-            isGrounded = Physics.CheckSphere(groundCheckPos, groundCheckRadius, groundMask);
+            Vector3 bottomCenter = transform.position + controller.center - Vector3.up * (controller.height * 0.5f);
+            Vector3 rayOrigin = bottomCenter + Vector3.up * 0.05f;
+            float rayDistance = Mathf.Min(groundCheckDistance, 0.15f);
             
             // Also check with a simple raycast as backup
             RaycastHit hit;
-            bool raycastGrounded = Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, out hit, groundCheckDistance + 0.1f, groundMask);
-            
-            if (!isGrounded && raycastGrounded)
-            {
-                isGrounded = true;
-            }
+            raycastGrounded = Physics.Raycast(rayOrigin, Vector3.down, out hit, rayDistance, groundMask);
+            bool raycastTouching = raycastGrounded && hit.normal.y > 0.7f;
+            isGrounded = (controller.isGrounded && velocity.y <= 0f) || raycastTouching;
             
             // Detailed ground detection debugging
             if (debugGroundDetection && Time.frameCount % 120 == 0) // Every 2 seconds
@@ -134,18 +150,19 @@ namespace Vampire.Player
                 int layerMaskValue = groundMask.value;
                 // Debug.Log($"[FPSController] === Ground Detection Debug ===");
                 // Debug.Log($"Player Position: {transform.position}");
-                // Debug.Log($"Ground Check Position: {groundCheckPos}");
-                // Debug.Log($"Ground Check Radius: {groundCheckRadius}");
+                // Debug.Log($"Bottom Center: {bottomCenter}");
+                // Debug.Log($"Ray Origin: {rayOrigin}");
+                // Debug.Log($"Ray Distance: {rayDistance}");
                 // Debug.Log($"Ground Mask Value: {layerMaskValue} (Binary: {System.Convert.ToString(layerMaskValue, 2)})");
-                // Debug.Log($"Sphere Check Result: {isGrounded}");
                 // Debug.Log($"Raycast Result: {raycastGrounded}");
                 if (raycastGrounded)
                 {
                     // Debug.Log($"Raycast Hit: {hit.collider.name} on layer {hit.collider.gameObject.layer}");
+                    // Debug.Log($"Hit distance: {hit.distance}");
                 }
                 
                 // Check what colliders are actually nearby
-                Collider[] nearbyColliders = Physics.OverlapSphere(groundCheckPos, groundCheckRadius * 2f);
+                Collider[] nearbyColliders = Physics.OverlapSphere(rayOrigin, groundCheckRadius * 2f);
                 // Debug.Log($"Nearby Colliders ({nearbyColliders.Length}): {string.Join(", ", System.Array.ConvertAll(nearbyColliders, c => $"{c.name}(L{c.gameObject.layer})"))}");
                 // Debug.Log("================================");
             }
@@ -161,7 +178,8 @@ namespace Vampire.Player
             float moveZ = Input.GetAxis("Vertical");
             bool running = Input.GetKey(KeyCode.LeftShift);
             bool crouching = Input.GetKey(KeyCode.LeftControl);
-            bool jumping = Input.GetKeyDown(KeyCode.Space);
+            // capture jump input into serialized field so it can be seen in the Inspector
+            jumping = Input.GetKeyDown(KeyCode.Space);
 
             // Calculate move direction
             Vector3 move = transform.right * moveX + transform.forward * moveZ;
@@ -202,6 +220,11 @@ namespace Vampire.Player
             // Apply movement
             Vector3 moveVector = move * targetSpeed * Time.deltaTime;
             controller.Move(moveVector);
+
+            // Update running particle system state
+            //bool shouldEmitRunParticles = running && isGrounded && move.magnitude > 0.1f;
+            // FOR SPEEDLINES
+            //UpdateRunParticles(shouldEmitRunParticles); 
 
             // Notify audio manager of movement state (optimized)
             if (audioManager != null)
@@ -270,12 +293,41 @@ namespace Vampire.Player
             controller.Move(velocity * Time.deltaTime);
         }
 
+        void UpdateRunParticles(bool shouldEmit)
+        {
+            if (runParticleSystem == null)
+            {
+                return;
+            }
+
+            if (runParticlesOrigin != null)
+            {
+                runParticleSystem.transform.position = runParticlesOrigin.position;
+            }
+
+            if (shouldEmit)
+            {
+                if (!runParticleSystem.isPlaying)
+                {
+                    runParticleSystem.Play();
+                }
+            }
+            else
+            {
+                if (runParticleSystem.isPlaying)
+                {
+                    runParticleSystem.Stop();
+                }
+            }
+        }
+
         void OnDrawGizmosSelected()
         {
             if (controller != null)
             {
-                Vector3 groundCheckPos = transform.position + Vector3.up * groundCheckRadius;
-                Gizmos.color = isGrounded ? Color.green : Color.red;
+                Vector3 bottomCenter = transform.position + controller.center - Vector3.up * (controller.height * 0.5f);
+                Vector3 groundCheckPos = bottomCenter + Vector3.up * groundCheckDistance;
+                Gizmos.color = isGrounded ? Color.blue : Color.red;
                 Gizmos.DrawWireSphere(groundCheckPos, groundCheckRadius);
             }
         }

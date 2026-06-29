@@ -9,6 +9,16 @@ namespace Vampire.DropPuzzle
     /// </summary>
     public class VorkinShop : MonoBehaviour
     {
+        [Header("Audio")]
+        [Tooltip("Random clips to play when the shop opens")]
+        [SerializeField] private AudioClip[] shopOpenClips;
+
+        [Tooltip("Random clips to play when the shop closes")]
+        [SerializeField] private AudioClip[] shopCloseClips;
+
+        [Tooltip("Optional audio source used to play the shop sounds. If empty, one will be created automatically")]
+        [SerializeField] private AudioSource audioSource;
+
         private bool playerInZone = false;
         private bool shopOpen = false;
         private GUIStyle guiStyle;
@@ -49,6 +59,7 @@ namespace Vampire.DropPuzzle
         private void OpenShop()
         {
             shopOpen = true;
+            PlayShopSound(shopOpenClips);
             DayNightCycleManager.Instance?.Pause();
             if (fpsController != null) fpsController.enabled = false;
             Cursor.lockState = CursorLockMode.None;
@@ -58,10 +69,32 @@ namespace Vampire.DropPuzzle
         private void CloseShop()
         {
             shopOpen = false;
+            PlayShopSound(shopCloseClips);
             DayNightCycleManager.Instance?.Resume();
             if (fpsController != null) fpsController.enabled = true;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+
+        private void PlayShopSound(AudioClip[] clips)
+        {
+            if (clips == null || clips.Length == 0)
+                return;
+
+            if (audioSource == null)
+            {
+                audioSource = GetComponent<AudioSource>();
+                if (audioSource == null)
+                    audioSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            AudioClip clip = clips[Random.Range(0, clips.Length)];
+            if (clip != null)
+            {
+                audioSource.playOnAwake = false;
+                audioSource.spatialBlend = 1f;
+                audioSource.PlayOneShot(clip);
+            }
         }
 
         private void OnGUI()

@@ -75,38 +75,39 @@ namespace Vampire.DropPuzzle
         
         private void TryEnterBallDrop()
         {
+            // Block entry before "Go Outside" quest is active (tutorial step 8)
+            if (TutorialManager.Instance != null
+                && TutorialManager.Instance.tutorialActive
+                && TutorialManager.Instance.tutorialStep < 8)
+                return;
+
             if (cycleManager == null)
             {
-                // No cycle manager - allow entry (fallback)
-                // Debug.LogWarning("[BallDropEntry] No DayNightCycleManager found, allowing entry");
                 LoadBallDropScene();
                 return;
             }
-            
+
             if (!cycleManager.CanEnterBallDrop())
             {
-                // It's day time - deny entry
                 float timeUntilNight = cycleManager.GetTimeRemaining();
-                // Debug.LogWarning($"[BallDropEntry] ⚠️ Ball drop only at night! {timeUntilNight:F0}s until night");
                 return;
             }
-            
+
             // Check if player has riceballs
             if (playerData != null)
             {
                 int totalBalls = playerData.Inventory.GetTotalBalls();
                 if (totalBalls == 0)
                 {
-                    // Debug.LogWarning("[BallDropEntry] ⚠️ No riceballs! Craft some first (need 5 rice)");
                     return;
                 }
             }
-            
-            // Show "going outside" comic the first time (check step BEFORE notifying, as notify advances it)
+
+            // Show "going outside" comic the first time (step 8 in the new flow)
             bool isFirstTimeOutside = !_goingOutsideComicShown
                 && goingOutsideComic != null
                 && TutorialManager.Instance != null
-                && TutorialManager.Instance.tutorialStep == 4;
+                && TutorialManager.Instance.tutorialStep == 8;
 
             // Notify tutorial manager that we're visiting ball drop (completes "Go Outside" quest)
             if (TutorialManager.Instance != null)
@@ -164,9 +165,10 @@ namespace Vampire.DropPuzzle
                 _guiStyleBuilt = true;
             }
 
+            // Suppress all prompts until "Go Outside" quest is active (step 8)
             bool inEarlyTutorial = TutorialManager.Instance != null &&
                                    TutorialManager.Instance.tutorialActive &&
-                                   TutorialManager.Instance.tutorialStep <= 2;
+                                   TutorialManager.Instance.tutorialStep < 8;
 
             bool canEnter  = cycleManager.CanEnterBallDrop();
             int  ballCount = playerData != null ? playerData.Inventory.GetTotalBalls() : 0;
@@ -179,29 +181,24 @@ namespace Vampire.DropPuzzle
                 _lastBallCount  = ballCount;
                 _lastTimeSecond = timeSec;
 
-                if (!canEnter)
+                if (inEarlyTutorial)
                 {
-                    if (!inEarlyTutorial)
-                    {
-                        _guiColor   = Color.yellow;
-                        _guiMessage = string.Format(nightOnlyMessage, cycleManager.GetFormattedTimeRemaining());
-                    }
-                    else
-                    {
-                        _guiMessage = ""; // suppress in early tutorial
-                    }
+                    _guiMessage = "";
+                }
+                else if (!canEnter)
+                {
+                    _guiColor   = Color.yellow;
+                    _guiMessage = string.Format(nightOnlyMessage, cycleManager.GetFormattedTimeRemaining());
                 }
                 else if (ballCount == 0)
                 {
-                    bool show = !inEarlyTutorial || TutorialManager.Instance.tutorialStep >= 2;
                     _guiColor   = Color.red;
-                    _guiMessage = show ? noBallsMessage : "";
+                    _guiMessage = noBallsMessage;
                 }
                 else
                 {
-                    bool show = !inEarlyTutorial || TutorialManager.Instance.tutorialStep >= 3;
                     _guiColor   = Color.green;
-                    _guiMessage = show ? $"{enterPromptMessage}\n({ballCount} riceballs ready)" : "";
+                    _guiMessage = $"{enterPromptMessage}\n({ballCount} riceballs ready)";
                 }
             }
 

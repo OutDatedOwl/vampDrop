@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44657ea10175d8446a57b45c69e05c00, type: 3}
+  m_Name: OpeningSequence
+  m_EditorClassIdentifier: Assembly-CSharp::Vampire.ComicSequenceConfig
+  sequenceId: new_sequence
+  sequenceName: New Comic Sequence
+  panels:
+  - background: {fileID: 21300000, guid: 2fa6d17b58110344ba2b6581b953ec15, type: 3}
+    character: {fileID: 0}
+    characterSide: 0
+    dialogueText: 5 Minutes till daybreak
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: 2fa6d17b58110344ba2b6581b953ec15, type: 3}
+    character: {fileID: 21300000, guid: 9bbe872970ca243408bf1f6efaff1d50, type: 3}
+    characterSide: 0
+    dialogueText: Where did he go?! He slipped passed me
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: 2fa6d17b58110344ba2b6581b953ec15, type: 3}
+    character: {fileID: 21300000, guid: 9bbe872970ca243408bf1f6efaff1d50, type: 3}
+    characterSide: 0
+    dialogueText: And Knox is gone too, where did he fly off too?
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: 2fa6d17b58110344ba2b6581b953ec15, type: 3}
+    character: {fileID: 21300000, guid: 9bbe872970ca243408bf1f6efaff1d50, type: 3}
+    characterSide: 0
+    dialogueText: 
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: 2fa6d17b58110344ba2b6581b953ec15, type: 3}
+    character: {fileID: 21300000, guid: dc11c5d2a9e05724bac51fbe6210110f, type: 3}
+    characterSide: 0
+    dialogueText: Did he go into that house?
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: a3ddbf4029a70f84aaaa23bf2484d46f, type: 3}
+    character: {fileID: 21300000, guid: dc11c5d2a9e05724bac51fbe6210110f, type: 3}
+    characterSide: 0
+    dialogueText: 
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: 2fa6d17b58110344ba2b6581b953ec15, type: 3}
+    character: {fileID: 21300000, guid: dc11c5d2a9e05724bac51fbe6210110f, type: 3}
+    characterSide: 0
+    dialogueText: Did he go into the basement
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: fb336290f6ad1d34b80e33aa994aebe1, type: 3}
+    character: {fileID: 0}
+    characterSide: 0
+    dialogueText: 'Now that I''m home I''m safe! I''ve prepared for this day for
+      years! '
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: 2fa6d17b58110344ba2b6581b953ec15, type: 3}
+    character: {fileID: 21300000, guid: dc11c5d2a9e05724bac51fbe6210110f, type: 3}
+    characterSide: 0
+    dialogueText: 'Now that I''m home I''m safe! I''ve prepared for this day for
+      years! '
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  nextSceneName: FPS_Collect
+  sequenceMusic: {fileID: 0}
+  musicVolume: 0.5

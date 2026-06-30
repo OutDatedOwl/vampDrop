@@ -1045,11 +1045,16 @@ MonoBehaviour:
   PuzzlePrefabs:
   - {fileID: 695581116435187846, guid: c937648fee5d4184eaa4549bc383d836, type: 3}
   - {fileID: 1612335730034298393, guid: da0e7472d7a7fbb45ad1d87214f7b832, type: 3}
+  - {fileID: 3001000001, guid: 85e6f5008be9d1e4584168544dbc9cea, type: 3}
+  - {fileID: 4001000001, guid: ee934665965afb349b8340da9c93ebe4, type: 3}
+  - {fileID: 5001000001, guid: 4d9f48fbde71702479e1d6432d33a1c8, type: 3}
+  - {fileID: 954302560144864450, guid: 3bbf50895824dae4d9e6b39410c8cfe6, type: 3}
   PuzzlePositionOffset: {x: 0, y: 10, z: -22.5}
   PuzzleRotation: {x: 0, y: 0, z: 0}
   PuzzleScale: {x: 1, y: 1, z: 1}
   UsePlayerLevel: 1
   ManualPuzzleIndex: 0
+  ForceLastPuzzle: 1
   BackgroundPrefab: {fileID: 0}
   BackgroundSprite: {fileID: 21300000, guid: 855d93821fe951742af3fe78b2197840, type: 3}
   BackgroundPosition: {x: -2, y: 1, z: -50}
@@ -1135,6 +1140,7 @@ GameObject:
   - component: {fileID: 822821943}
   - component: {fileID: 822821942}
   - component: {fileID: 822821945}
+  - component: {fileID: 822821946}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1260,6 +1266,23 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &822821946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 822821941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a0fb79038cf7b649aeb90138502a2a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Vampire.DropPuzzle.DropPuzzleCameraController
+  BoundsPadding: 3
+  ReadyZoomFraction: 0.55
+  ReadyOffset: {x: 0, y: 1.5}
+  TransitionSpeed: 2.5
+  AssessmentPrompt: Press [SPACE] when ready to drop
 --- !u!1 &849906690
 GameObject:
   m_ObjectHideFlags: 0
@@ -2220,7 +2243,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1867641196
 Transform:
   m_ObjectHideFlags: 0

@@ -29,6 +29,9 @@ namespace Vampire.DropPuzzle
             Invoke(nameof(CacheWalls), 0.5f);
         }
 
+        /// <summary>Call after instantiating a new puzzle to rebuild the wall cache.</summary>
+        public void RefreshWalls() => Invoke(nameof(CacheWalls), 0.1f);
+
         private void CacheWalls()
         {
             GameObject[] wallObjects = GameObject.FindGameObjectsWithTag("Wall");

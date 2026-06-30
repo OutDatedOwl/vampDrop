@@ -13,6 +13,7 @@ namespace Vampire
         [Header("Scene Names")]
         public string FPSSceneName = "FPS_Collect";
         public string DropPuzzleSceneName = "DropPuzzle";
+        public string BaseSceneName = "Base";
         
         [Header("Transition Settings")]
         [Tooltip("Key to transition to Drop Puzzle from FPS")]
@@ -22,6 +23,7 @@ namespace Vampire
         public static GameSceneManager Instance => instance;
         
         private int collectedRiceCount = 0;
+        private string _currentSceneName = "";
         
         private void Awake()
         {
@@ -45,7 +47,8 @@ namespace Vampire
 
         private void OnAnySceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (scene.name == DropPuzzleSceneName)
+            _currentSceneName = scene.name;
+            if (scene.name == DropPuzzleSceneName || scene.name == BaseSceneName)
                 SetRiceEntitiesEnabled(false);
             else if (scene.name == FPSSceneName)
                 SetRiceEntitiesEnabled(true);
@@ -73,24 +76,8 @@ namespace Vampire
         
         private void Update()
         {
-            // Get current scene once
-            string currentScene = SceneManager.GetActiveScene().name;
-            
-            if (currentScene == FPSSceneName)
-            {
-                if (Input.GetKeyDown(TransitionKey))
-                {
-                    // Debug.Log($"[GameSceneManager] Transitioning from {FPSSceneName} to {DropPuzzleSceneName}...");
-                    TransitionToDropPuzzle();
-                }
-            }
-            else
-            {
-                if (Input.GetKeyDown(TransitionKey))
-                {
-                    // Debug.Log($"[GameSceneManager] Transition key pressed but not in FPS scene. Current: {currentScene}, Expected: {FPSSceneName}");
-                }
-            }
+            if (_currentSceneName == FPSSceneName && Input.GetKeyDown(TransitionKey))
+                TransitionToDropPuzzle();
         }
         
         /// <summary>

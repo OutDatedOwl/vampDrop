@@ -16,19 +16,23 @@ namespace Vampire.DropPuzzle
         [Header("Completion Settings")]
         [Tooltip("Time in seconds a ball must be still to be considered stuck")]
         public float stuckThreshold = 3.5f;
-        
+
         [Tooltip("Check interval in seconds")]
         public float checkInterval = 0.5f;
-        
+
+        [Tooltip("Hard timeout: force-end the puzzle after this many seconds regardless of ball state")]
+        public float maxPuzzleTime = 60f;
+
         [Header("State")]
         public bool isDropActive = false;
         public bool isComplete = false;
         public int ballsRemaining = 0;
         public int ballsStuck = 0;
-        
+
         // Track ball positions to detect stuck balls
         private Dictionary<Entity, BallTrackingData> trackedBalls = new Dictionary<Entity, BallTrackingData>();
         private float nextCheckTime = 0f;
+        private float _dropStartTime = 0f;
         private List<Entity> _toRemove = new List<Entity>(8);
 
         // Cached query — created once, reused every check to avoid per-call sync points
@@ -83,7 +87,15 @@ namespace Vampire.DropPuzzle
         private void Update()
         {
             if (!isDropActive || isComplete) return;
-            
+
+            // Hard timeout — catches any edge case where balls never settle
+            if (Time.time - _dropStartTime >= maxPuzzleTime)
+            {
+                Debug.LogWarning($"[BallDropCompletion] Hard timeout reached ({maxPuzzleTime}s) — forcing completion");
+                ForceSalvage();
+                return;
+            }
+
             // Check periodically
             if (Time.time >= nextCheckTime)
             {
@@ -101,9 +113,10 @@ namespace Vampire.DropPuzzle
             isComplete = false;
             ballsRemaining = 0;
             ballsStuck = 0;
+            _dropStartTime = Time.time;
             trackedBalls.Clear();
-            
-            // Debug.Log("[BallDropCompletion] Drop session started");
+
+            Debug.Log("[BallDropCompletion] Drop session started");
         }
         
         /// <summary>
@@ -129,6 +142,18 @@ namespace Vampire.DropPuzzle
                 return;
             }
 
+            // Fast path: if every remaining ball is sleeping, physics is done
+            bool allSleeping = true;
+            for (int i = 0; i < physicsDatas.Length; i++)
+                if (!physicsDatas[i].IsSleeping) { allSleeping = false; break; }
+            if (allSleeping)
+            {
+                entities.Dispose();
+                physicsDatas.Dispose();
+                CompleteDropSession($"All {ballsRemaining} balls sleeping");
+                return;
+            }
+
             // Remove stale tracking entries — reuse cached list, no GC
             _toRemove.Clear();
             foreach (var key in trackedBalls.Keys)
@@ -148,7 +173,7 @@ namespace Vampire.DropPuzzle
                 if (trackedBalls.TryGetValue(entity, out var oldData))
                 {
                     float distance = Vector3.Distance(currentPos, oldData.lastPosition);
-                    if (distance < 0.01f)
+                    if (distance < 0.05f)
                     {
                         oldData.timeSinceLastMove += checkInterval;
                         if (oldData.timeSinceLastMove >= stuckThreshold)
@@ -191,7 +216,7 @@ namespace Vampire.DropPuzzle
             isComplete = true;
             isDropActive = false;
             
-            // Debug.Log($"[BallDropCompletion] ✅ DROP COMPLETE: {reason}");
+            Debug.Log($"[BallDropCompletion] DROP COMPLETE: {reason}");
             
             if (OnDropComplete != null)
             {

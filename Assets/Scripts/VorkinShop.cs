@@ -19,13 +19,17 @@ namespace Vampire.DropPuzzle
 
         private void Start()
         {
+            enabled = false; // re-enabled by OnTriggerEnter; prevents OnGUI cost when player is elsewhere
             fpsController = FindObjectOfType<Vampire.Player.FPSController>();
         }
 
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
+            {
                 playerInZone = true;
+                enabled = true;
+            }
         }
 
         private void OnTriggerExit(Collider other)
@@ -34,6 +38,7 @@ namespace Vampire.DropPuzzle
             {
                 playerInZone = false;
                 if (shopOpen) CloseShop();
+                enabled = false;
             }
         }
 
@@ -49,6 +54,7 @@ namespace Vampire.DropPuzzle
         private void OpenShop()
         {
             shopOpen = true;
+            Vampire.EscapeMenuManager.PushEscBlock();
             DayNightCycleManager.Instance?.Pause();
             if (fpsController != null) fpsController.enabled = false;
             Cursor.lockState = CursorLockMode.None;
@@ -58,6 +64,7 @@ namespace Vampire.DropPuzzle
         private void CloseShop()
         {
             shopOpen = false;
+            Vampire.EscapeMenuManager.PopEscBlock();
             DayNightCycleManager.Instance?.Resume();
             if (fpsController != null) fpsController.enabled = true;
             Cursor.lockState = CursorLockMode.Locked;

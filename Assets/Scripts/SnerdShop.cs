@@ -43,6 +43,7 @@ namespace Vampire.DropPuzzle
 
         private void Start()
         {
+            enabled = false; // re-enabled by OnTriggerEnter; prevents OnGUI cost when player is elsewhere
             fpsController = FindObjectOfType<Vampire.Player.FPSController>();
             RespawnPurchasedWorkers();
         }
@@ -73,12 +74,15 @@ namespace Vampire.DropPuzzle
             if (worker != null)
             {
                 worker.workerIndex = workerIndex;
-                // Name is assigned in HelperWorker.Start() from the pool if not already set
                 activeWorkers.Add(worker);
 
-                // Register with HUD
                 if (Helpers.HelperManagerUI.Instance != null)
+                {
                     Helpers.HelperManagerUI.Instance.RegisterWorker(worker);
+                    // Enable the Tab panel on first worker — it starts disabled until a helper is owned
+                    if (!Helpers.HelperManagerUI.Instance.enabled)
+                        Helpers.HelperManagerUI.Instance.enabled = true;
+                }
             }
         }
 
@@ -101,7 +105,10 @@ namespace Vampire.DropPuzzle
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
+            {
                 playerInZone = true;
+                enabled = true;
+            }
         }
 
         private void OnTriggerExit(Collider other)
@@ -110,6 +117,7 @@ namespace Vampire.DropPuzzle
             {
                 playerInZone = false;
                 if (shopOpen) CloseShop();
+                enabled = false;
             }
         }
 
@@ -125,6 +133,7 @@ namespace Vampire.DropPuzzle
         private void OpenShop()
         {
             shopOpen = true;
+            Vampire.EscapeMenuManager.PushEscBlock();
             DayNightCycleManager.Instance?.Pause();
             if (fpsController != null) fpsController.enabled = false;
             Cursor.lockState = CursorLockMode.None;
@@ -134,6 +143,7 @@ namespace Vampire.DropPuzzle
         private void CloseShop()
         {
             shopOpen = false;
+            Vampire.EscapeMenuManager.PopEscBlock();
             DayNightCycleManager.Instance?.Resume();
             if (fpsController != null) fpsController.enabled = true;
             Cursor.lockState = CursorLockMode.Locked;

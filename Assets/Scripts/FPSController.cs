@@ -63,6 +63,7 @@ namespace Vampire.Player
         private CharacterController controller;
         private float defaultHeight;
         private float crouchHeight;
+        private Vector3 defaultCenter;   // saved in Start; used to anchor capsule bottom
         private Vector3 velocity;
         private float xRotation = 0f;
         private float smoothMouseX = 0f;
@@ -74,7 +75,8 @@ namespace Vampire.Player
         {
             controller = GetComponent<CharacterController>();
             defaultHeight = controller.height;
-            crouchHeight = defaultHeight * 0.5f;
+            crouchHeight  = defaultHeight * 0.5f;
+            defaultCenter = controller.center;
 
             // Lock cursor
             Cursor.lockState = CursorLockMode.Locked;
@@ -133,163 +135,95 @@ namespace Vampire.Player
 
         void ProcessMovement()
         {
-            // Ground check with enhanced debugging
-            Vector3 bottomCenter = transform.position + controller.center - Vector3.up * (controller.height * 0.5f);
-            Vector3 rayOrigin = bottomCenter + Vector3.up * 0.05f;
-            float rayDistance = Mathf.Min(groundCheckDistance, 0.15f);
-            
-            // Also check with a simple raycast as backup
-            RaycastHit hit;
-            raycastGrounded = Physics.Raycast(rayOrigin, Vector3.down, out hit, rayDistance, groundMask);
-            bool raycastTouching = raycastGrounded && hit.normal.y > 0.7f;
-            isGrounded = (controller.isGrounded && velocity.y <= 0f) || raycastTouching;
-            
-            // Detailed ground detection debugging
-            if (debugGroundDetection && Time.frameCount % 120 == 0) // Every 2 seconds
+            // ── Ground detection ──────────────────────────────────────────────
+            // Sphere placed at the bottom hemisphere centre of the capsule.
+            // Formula keeps it valid even while the capsule is lerping during crouch.
+            Vector3 capsuleBottomCenter = transform.position + controller.center
+                + Vector3.down * (controller.height * 0.5f - controller.radius);
+
+            isGrounded = Physics.CheckSphere(
+                capsuleBottomCenter, controller.radius + 0.05f,
+                groundMask, QueryTriggerInteraction.Ignore);
+
+            // Fallback raycast — from capsule bottom downward a small extra distance
+            if (!isGrounded)
             {
-                int layerMaskValue = groundMask.value;
-                // Debug.Log($"[FPSController] === Ground Detection Debug ===");
-                // Debug.Log($"Player Position: {transform.position}");
-                // Debug.Log($"Bottom Center: {bottomCenter}");
-                // Debug.Log($"Ray Origin: {rayOrigin}");
-                // Debug.Log($"Ray Distance: {rayDistance}");
-                // Debug.Log($"Ground Mask Value: {layerMaskValue} (Binary: {System.Convert.ToString(layerMaskValue, 2)})");
-                // Debug.Log($"Raycast Result: {raycastGrounded}");
-                if (raycastGrounded)
-                {
-                    // Debug.Log($"Raycast Hit: {hit.collider.name} on layer {hit.collider.gameObject.layer}");
-                    // Debug.Log($"Hit distance: {hit.distance}");
-                }
-                
-                // Check what colliders are actually nearby
-                Collider[] nearbyColliders = Physics.OverlapSphere(rayOrigin, groundCheckRadius * 2f);
-                // Debug.Log($"Nearby Colliders ({nearbyColliders.Length}): {string.Join(", ", System.Array.ConvertAll(nearbyColliders, c => $"{c.name}(L{c.gameObject.layer})"))}");
-                // Debug.Log("================================");
+                float rayLen = controller.radius + groundCheckDistance;
+                isGrounded = Physics.Raycast(
+                    capsuleBottomCenter, Vector3.down, rayLen,
+                    groundMask, QueryTriggerInteraction.Ignore);
             }
+
+            // Final fallback: trust the CharacterController's own flag
+            if (!isGrounded && controller.isGrounded)
+                isGrounded = true;
+
+            if (debugGroundDetection && Time.frameCount % 120 == 0)
+                Debug.Log($"[FPSController] grounded={isGrounded}  capsuleBot={capsuleBottomCenter}");
 
             // Reset vertical velocity when grounded
             if (isGrounded && velocity.y < 0)
-            {
                 velocity.y = -2f;
-            }
 
-            // Get input
-            float moveX = Input.GetAxis("Horizontal");
-            float moveZ = Input.GetAxis("Vertical");
-            bool running = Input.GetKey(KeyCode.LeftShift);
-            bool crouching = Input.GetKey(KeyCode.LeftControl);
-            // capture jump input into serialized field so it can be seen in the Inspector
+            // ── Input ─────────────────────────────────────────────────────────
+            float moveX    = Input.GetAxis("Horizontal");
+            float moveZ    = Input.GetAxis("Vertical");
+            bool  running  = Input.GetKey(KeyCode.LeftShift);
+            bool  crouching = Input.GetKey(KeyCode.LeftControl);
             jumping = Input.GetKeyDown(KeyCode.Space);
 
-            // Calculate move direction
             Vector3 move = transform.right * moveX + transform.forward * moveZ;
-            if (move.magnitude > 1f)
-            {
-                move = move.normalized;
-            }
+            if (move.magnitude > 1f) move = move.normalized;
 
-            // Determine speed
-            float targetSpeed = walkSpeed;
-            if (crouching)
-            {
-                targetSpeed = crouchSpeed;
-            }
-            else if (running && isGrounded)
-            {
-                targetSpeed = runSpeed;
-            }
+            float targetSpeed = crouching ? crouchSpeed
+                              : (running && isGrounded) ? runSpeed
+                              : walkSpeed;
 
-            // Handle crouching height
+            // ── Crouch / stand ────────────────────────────────────────────────
             float targetHeight = crouching ? crouchHeight : defaultHeight;
-            if (controller.height != targetHeight)
+            if (!Mathf.Approximately(controller.height, targetHeight))
             {
-                float oldHeight = controller.height;
                 controller.height = Mathf.Lerp(controller.height, targetHeight, 8f * Time.deltaTime);
-                
-                // Adjust position when changing height
-                Vector3 pos = transform.position;
-                pos.y += (controller.height - oldHeight) * 0.5f;
-                transform.position = pos;
 
-                // Adjust camera
-                Vector3 camPos = cameraTransform.localPosition;
-                camPos.y = controller.height * 0.85f; // Camera at 85% of height
-                cameraTransform.localPosition = camPos;
+                // Shift the capsule centre so the BOTTOM stays at the same world height.
+                // This keeps feet on the ground; the top of the capsule (head) rises/falls.
+                //   derivation: defaultCenter.y - defaultHeight/2 == newCenter.y - newHeight/2
+                //               newCenter.y = defaultCenter.y + (newHeight - defaultHeight) * 0.5f
+                float newCenterY = defaultCenter.y + (controller.height - defaultHeight) * 0.5f;
+                controller.center = new Vector3(defaultCenter.x, newCenterY, defaultCenter.z);
+
+                // Camera: 85 % of the way from the capsule bottom to the capsule top (local space)
+                float capsuleBottomLocal = controller.center.y - controller.height * 0.5f;
+                float camLocalY = capsuleBottomLocal + controller.height * 0.85f;
+                cameraTransform.localPosition = new Vector3(
+                    cameraTransform.localPosition.x, camLocalY,
+                    cameraTransform.localPosition.z);
             }
 
-            // Apply movement
-            Vector3 moveVector = move * targetSpeed * Time.deltaTime;
-            controller.Move(moveVector);
+            // ── Movement ──────────────────────────────────────────────────────
+            controller.Move(move * targetSpeed * Time.deltaTime);
 
-            // Update running particle system state
-            //bool shouldEmitRunParticles = running && isGrounded && move.magnitude > 0.1f;
-            // FOR SPEEDLINES
-            //UpdateRunParticles(shouldEmitRunParticles); 
-
-            // Notify audio manager of movement state (optimized)
+            // Audio
+            bool isMoving = move.magnitude > 0.01f;
             if (audioManager != null)
             {
-                if (moveVector.magnitude > 0.1f)
-                {
-                    // Player is moving - reduce audio manager calls for performance
-                    if (Time.frameCount % 3 == 0) // Only call audio manager every 3 frames
-                    {
-                        audioManager.OnPlayerMoving(transform.position, running, crouching, isGrounded);
-                    }
-                    
-                    // Reduce log frequency
-                    if (Time.frameCount % 240 == 0) // Log once per 4 seconds
-                    {
-                        // Debug.Log($"[FPSController] Player moving - MoveVector: {moveVector.magnitude:F3}, Running: {running}, Crouching: {crouching}, Grounded: {isGrounded}");
-                    }
-                }
-                else
-                {
-                    // Only call OnPlayerStopped occasionally to avoid spam
-                    if (Time.frameCount % 10 == 0)
-                    {
-                        audioManager.OnPlayerStopped();
-                    }
-                    
-                    if (Time.frameCount % 240 == 0)
-                    {
-                        // Debug.Log($"[FPSController] Player stopped - MoveVector: {moveVector.magnitude:F3}");
-                    }
-                }
-            }
-            else
-            {
-                // Log missing audio manager occasionally
-                if (Time.frameCount % 300 == 0) // Every 5 seconds
-                {
-                    // Debug.LogWarning("[FPSController] Audio manager is null!");
-                }
+                if (isMoving  && Time.frameCount % 3  == 0) audioManager.OnPlayerMoving(transform.position, running, crouching, isGrounded);
+                if (!isMoving && Time.frameCount % 10 == 0) audioManager.OnPlayerStopped();
             }
 
-            // Jump (with cooldown to prevent infinite jumping)
-            bool canJump = isGrounded && !crouching && (Time.time - lastJumpTime >= jumpCooldown);
-            
-            if (jumping && canJump)
+            // ── Jump ──────────────────────────────────────────────────────────
+            if (jumping && isGrounded && !crouching && Time.time - lastJumpTime >= jumpCooldown)
             {
-                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-                lastJumpTime = Time.time;
-                
-                // Play jump sound
-                if (audioManager != null)
-                {
-                    audioManager.OnPlayerJump();
-                }
+                velocity.y    = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                lastJumpTime  = Time.time;
+                if (audioManager != null) audioManager.OnPlayerJump();
             }
 
-            // Apply gravity with Y velocity damping to prevent bouncing
+            // ── Gravity ───────────────────────────────────────────────────────
             velocity.y += gravity * Time.deltaTime;
-            
-            // Dampen Y velocity when in air (prevents infinite jumping exploit)
             if (!isGrounded)
-            {
                 velocity.y *= (1f - yVelocityDamping * Time.deltaTime);
-            }
-            
+
             controller.Move(velocity * Time.deltaTime);
         }
 

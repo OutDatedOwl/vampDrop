@@ -22,22 +22,23 @@ namespace Vampire.DropPuzzle
             if (other.CompareTag("Player"))
             {
                 playerInZone = true;
-                // Debug.Log("[BuyZone] Player entered shop zone");
+                enabled = true;
             }
         }
-        
+
         private void OnTriggerExit(Collider other)
         {
             if (other.CompareTag("Player"))
             {
                 playerInZone = false;
-                // Debug.Log("[BuyZone] Player left shop zone");
+                if (shopOpen) CloseShop();
+                enabled = false;
             }
         }
-        
+
         private void Start()
         {
-            // Find FPS controller in scene
+            enabled = false; // re-enabled by OnTriggerEnter
             fpsController = FindObjectOfType<Vampire.Player.FPSController>();
         }
         
@@ -58,7 +59,7 @@ namespace Vampire.DropPuzzle
         private void OpenShop()
         {
             shopOpen = true;
-            // Debug.Log("[BuyZone] 🛒 Shop opened!");
+            Vampire.EscapeMenuManager.PushEscBlock();
             
             // Pause day/night cycle while shopping
             if (DayNightCycleManager.Instance != null)
@@ -80,7 +81,7 @@ namespace Vampire.DropPuzzle
         private void CloseShop()
         {
             shopOpen = false;
-            // Debug.Log("[BuyZone] Shop closed");
+            Vampire.EscapeMenuManager.PopEscBlock();
             
             // Resume day/night cycle
             if (DayNightCycleManager.Instance != null)

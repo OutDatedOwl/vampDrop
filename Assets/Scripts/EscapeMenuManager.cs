@@ -22,6 +22,12 @@ namespace Vampire
         private float _musicVolume = 1f;
         private float _sfxVolume   = 1f;
         private bool  _isOpen      = false;
+        private Player.FPSController _fpsController;
+
+        // Shops call PushEscBlock/PopEscBlock so ESC closes the shop instead of opening this menu.
+        private static int _escBlockCount = 0;
+        public  static void PushEscBlock() => _escBlockCount++;
+        public  static void PopEscBlock()  => _escBlockCount = Mathf.Max(0, _escBlockCount - 1);
 
         public bool IsOpen => _isOpen;
 
@@ -93,7 +99,8 @@ namespace Vampire
             {
                 bool workerOpen = Helpers.HelperManagerUI.Instance != null
                                && Helpers.HelperManagerUI.Instance.InUIMode;
-                if (!workerOpen)
+                bool shopOpen   = _escBlockCount > 0;
+                if (!workerOpen && !shopOpen)
                 {
                     if (_isOpen) CloseMenu();
                     else         OpenMenu();
@@ -174,14 +181,24 @@ namespace Vampire
 
         public void OpenMenu()
         {
+            _fpsController = FindFirstObjectByType<Player.FPSController>();
+            if (_fpsController != null) _fpsController.enabled = false;
+
+            // Stop walking audio so it doesn't bleed through the pause
+            Player.FPSAudioManager.Instance?.OnPlayerStopped();
+
             _isOpen          = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible   = true;
             Time.timeScale   = 0f;
+            AudioListener.pause = true;
         }
 
         public void CloseMenu()
         {
+            AudioListener.pause = false;
+            if (_fpsController != null) _fpsController.enabled = true;
+            _fpsController = null;
             _isOpen        = false;
             Time.timeScale = 1f;
             SavePrefs();

@@ -19,6 +19,7 @@ namespace Vampire.DropPuzzle
         [Tooltip("Optional audio source used to play the shop sounds. If empty, one will be created automatically")]
         [SerializeField] private AudioSource audioSource;
 
+
         private bool playerInZone = false;
         private bool shopOpen = false;
         private GUIStyle guiStyle;
@@ -29,13 +30,17 @@ namespace Vampire.DropPuzzle
 
         private void Start()
         {
+            enabled = false; // re-enabled by OnTriggerEnter; prevents OnGUI cost when player is elsewhere
             fpsController = FindObjectOfType<Vampire.Player.FPSController>();
         }
 
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
+            {
                 playerInZone = true;
+                enabled = true;
+            }
         }
 
         private void OnTriggerExit(Collider other)
@@ -44,6 +49,7 @@ namespace Vampire.DropPuzzle
             {
                 playerInZone = false;
                 if (shopOpen) CloseShop();
+                enabled = false;
             }
         }
 
@@ -59,6 +65,7 @@ namespace Vampire.DropPuzzle
         private void OpenShop()
         {
             shopOpen = true;
+            Vampire.EscapeMenuManager.PushEscBlock();
             PlayShopSound(shopOpenClips);
             DayNightCycleManager.Instance?.Pause();
             if (fpsController != null) fpsController.enabled = false;
@@ -69,6 +76,7 @@ namespace Vampire.DropPuzzle
         private void CloseShop()
         {
             shopOpen = false;
+            Vampire.EscapeMenuManager.PopEscBlock();
             PlayShopSound(shopCloseClips);
             DayNightCycleManager.Instance?.Resume();
             if (fpsController != null) fpsController.enabled = true;
@@ -96,6 +104,7 @@ namespace Vampire.DropPuzzle
                 audioSource.PlayOneShot(clip);
             }
         }
+
 
         private void OnGUI()
         {

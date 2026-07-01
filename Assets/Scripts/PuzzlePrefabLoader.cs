@@ -6,6 +6,18 @@ namespace Vampire.DropPuzzle
 {
     public class PuzzlePrefabLoader : MonoBehaviour
     {
+        /// <summary>Fired after a puzzle prefab is instantiated and repositioned.</summary>
+        public static event System.Action OnPuzzleLoaded;
+
+        /// <summary>True once the first puzzle has been loaded this scene.</summary>
+        public static bool IsPuzzleReady { get; private set; }
+
+        /// <summary>The currently active puzzle instance (used by camera for bounds).</summary>
+        public static GameObject CurrentPuzzle { get; private set; }
+
+        private void OnEnable()  { IsPuzzleReady = false; CurrentPuzzle = null; }
+        private void OnDisable() { IsPuzzleReady = false; CurrentPuzzle = null; }
+
         [Header("Puzzle Prefabs")]
         [Tooltip("Add your manually designed puzzle prefabs here")]
         public GameObject[] PuzzlePrefabs;
@@ -23,9 +35,13 @@ namespace Vampire.DropPuzzle
         [Header("Puzzle Selection")]
         [Tooltip("Auto-select puzzle based on player level")]
         public bool UsePlayerLevel = true;
-        
+
         [Tooltip("Manual puzzle index (only used if UsePlayerLevel is false)")]
         public int ManualPuzzleIndex = 0;
+
+        [Header("Debug / Testing")]
+        [Tooltip("Always load the last prefab in the array regardless of other settings")]
+        public bool ForceLastPuzzle = false;
         
         [Header("Background")]
         [Tooltip("Optional background prefab (can be image plane or quad)")]
@@ -52,7 +68,9 @@ namespace Vampire.DropPuzzle
             if (puzzleEnhancer == null)
                 puzzleEnhancer = gameObject.AddComponent<PuzzleEnhancer>();
 
-            int puzzleToLoad = UsePlayerLevel ? SelectPuzzleIndex() : ManualPuzzleIndex;
+            int puzzleToLoad = ForceLastPuzzle
+                ? Mathf.Max(0, PuzzlePrefabs.Length - 1)
+                : UsePlayerLevel ? SelectPuzzleIndex() : ManualPuzzleIndex;
             bool guaranteeX2 = IsFirstPostTutorialRun();
 
             currentPuzzleIndex = puzzleToLoad;
@@ -64,13 +82,16 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private bool IsTutorialComplete()
         {
+            // TutorialCompleted is set to true by PuzzleManager after the first drop,
+            // while tutorialActive stays true until the money quest (step 7) finishes.
+            // Check the persisted flag first so post-tutorial puzzles load on the second visit.
+            if (PlayerDataManager.Instance != null && PlayerDataManager.Instance.TutorialCompleted)
+                return true;
+
             if (TutorialManager.Instance != null)
                 return !TutorialManager.Instance.tutorialActive;
 
-            if (PlayerDataManager.Instance != null)
-                return PlayerDataManager.Instance.TutorialCompleted;
-
-            return true; // No manager present — assume complete
+            return true;
         }
 
         /// <summary>
@@ -91,22 +112,45 @@ namespace Vampire.DropPuzzle
         /// </summary>
         private int SelectPuzzleIndex()
         {
-            if (PuzzlePrefabs == null || PuzzlePrefabs.Length == 0) return 0;
+            // --- Diagnostic dump ---
+            var pdm = PlayerDataManager.Instance;
+            var tm  = TutorialManager.Instance;
+            string prefabList = PuzzlePrefabs == null ? "null" :
+                string.Join(", ", System.Array.ConvertAll(PuzzlePrefabs,
+                    p => p != null ? p.name : "NULL"));
+
+            Debug.Log(
+                $"[PuzzlePrefabLoader] === Puzzle Selection ===\n" +
+                $"  PuzzlePrefabs ({(PuzzlePrefabs?.Length ?? 0)}): [{prefabList}]\n" +
+                $"  UsePlayerLevel: {UsePlayerLevel}\n" +
+                $"  PlayerDataManager.TutorialCompleted: {(pdm != null ? pdm.TutorialCompleted.ToString() : "PDM missing")}\n" +
+                $"  TutorialManager.tutorialActive: {(tm != null ? tm.tutorialActive.ToString() : "TM missing")}\n" +
+                $"  IsTutorialComplete(): {IsTutorialComplete()}\n" +
+                $"  TotalRunsCompleted: {(pdm != null ? pdm.TotalRunsCompleted.ToString() : "PDM missing")}\n" +
+                $"  IsFirstPostTutorialRun(): {IsFirstPostTutorialRun()}"
+            );
+            // -----------------------
+
+            if (PuzzlePrefabs == null || PuzzlePrefabs.Length == 0)
+            {
+                Debug.LogError("[PuzzlePrefabLoader] No puzzle prefabs assigned!");
+                return 0;
+            }
 
             if (!IsTutorialComplete())
             {
-                Debug.Log("[PuzzlePrefabLoader] Tutorial active — loading tutorial puzzle (index 0)");
+                Debug.Log("[PuzzlePrefabLoader] REASON: Tutorial not complete → loading tutorial puzzle (index 0)");
                 return 0;
             }
 
             if (PuzzlePrefabs.Length <= 1)
             {
-                Debug.LogWarning("[PuzzlePrefabLoader] Only one puzzle prefab assigned — add more to PuzzlePrefabs array for post-tutorial variety");
+                Debug.LogWarning("[PuzzlePrefabLoader] REASON: Only 1 prefab assigned — add puzzle2+ to PuzzlePrefabs array");
                 return 0;
             }
 
             int chosen = Random.Range(1, PuzzlePrefabs.Length);
-            Debug.Log($"[PuzzlePrefabLoader] Post-tutorial: randomly selected puzzle index {chosen} ({PuzzlePrefabs[chosen]?.name})");
+            Debug.Log($"[PuzzlePrefabLoader] REASON: Post-tutorial, {PuzzlePrefabs.Length} prefabs available → randomly chose index {chosen} ({PuzzlePrefabs[chosen]?.name ?? "NULL"})");
             return chosen;
         }
 
@@ -121,12 +165,15 @@ namespace Vampire.DropPuzzle
             {
                 currentPuzzleInstance = Instantiate(PuzzlePrefabs[puzzleIndex], transform);
                 currentPuzzleInstance.name = $"Puzzle_{puzzleIndex}";
+                CurrentPuzzle = currentPuzzleInstance;
 
                 currentPuzzleInstance.transform.localPosition = PuzzlePositionOffset;
                 currentPuzzleInstance.transform.localRotation = Quaternion.Euler(PuzzleRotation);
                 currentPuzzleInstance.transform.localScale = PuzzleScale;
 
                 Debug.Log($"[PuzzlePrefabLoader] Loaded puzzle prefab: {PuzzlePrefabs[puzzleIndex].name}");
+
+                RepositionDropper(currentPuzzleInstance);
 
                 if (EnableDynamicEnhancement && puzzleEnhancer != null)
                     puzzleEnhancer.EnhancePuzzle(currentPuzzleInstance, guaranteeX2Gate);
@@ -136,6 +183,9 @@ namespace Vampire.DropPuzzle
                     Debug.LogError("[PuzzlePrefabLoader] PuzzleEnhancer component is NULL!");
 
                 RefreshGateSystem();
+
+                IsPuzzleReady = true;
+                OnPuzzleLoaded?.Invoke();
             }
             else
             {
@@ -188,6 +238,79 @@ namespace Vampire.DropPuzzle
                 gateSystem.RefreshGates();
                 Debug.Log("[PuzzlePrefabLoader] Refreshed gate interaction system");
             }
+
+            var wallSystem = FindObjectOfType<RiceBallWallCollisionSystem>();
+            if (wallSystem != null)
+            {
+                wallSystem.RefreshWalls();
+                Debug.Log("[PuzzlePrefabLoader] Refreshed wall collision cache");
+            }
+        }
+
+        /// <summary>
+        /// Moves the DropperControllerECS to a child named "DropperAnchor" inside the
+        /// loaded puzzle prefab, if one exists.  Add an empty GameObject with that name
+        /// to any puzzle prefab to control exactly where the dropper sits.
+        /// </summary>
+        private void RepositionDropper(GameObject puzzleInstance)
+        {
+            var dropper = FindObjectOfType<DropperControllerECS>();
+            if (dropper == null)
+            {
+                Debug.LogWarning("[PuzzlePrefabLoader] RepositionDropper: No DropperControllerECS found in scene.");
+                return;
+            }
+
+            Debug.Log($"[PuzzlePrefabLoader] RepositionDropper: dropper '{dropper.name}' currently at {dropper.transform.position}, " +
+                      $"DropPoint={(dropper.DropPoint != null ? dropper.DropPoint.position.ToString() : "NULL")}");
+
+            // ── Path A: explicit DropperAnchor child in prefab ──────────────────
+            var anchor = puzzleInstance.transform.Find("DropperAnchor");
+            if (anchor != null)
+            {
+                dropper.transform.position = anchor.position;
+                // DropPoint intentionally NOT set to anchor — anchor is static, but the
+                // dropper oscillates. DropPoint must stay as dropper.transform so balls
+                // spawn at the dropper's current moving position.
+                dropper.SetDropCenter(anchor.position.x);
+                Debug.Log($"[PuzzlePrefabLoader] RepositionDropper: DropperAnchor FOUND → moved dropper to {anchor.position}.");
+                return;
+            }
+
+            // ── Path B: no anchor — auto-fit to puzzle bounds ───────────────────
+            Debug.LogWarning($"[PuzzlePrefabLoader] RepositionDropper: No child named 'DropperAnchor' in '{puzzleInstance.name}'. " +
+                             "Add an empty child named 'DropperAnchor' to the prefab for precise dropper placement. " +
+                             "Falling back to auto-bounds positioning.");
+
+            Bounds pb = CalculatePrefabBounds(puzzleInstance);
+            Debug.Log($"[PuzzlePrefabLoader] RepositionDropper: puzzle bounds — center={pb.center}, " +
+                      $"min={pb.min}, max={pb.max}, size={pb.size}");
+
+            // Place dropper 1 unit above the top-centre of the puzzle, matching its Z
+            Vector3 autoPos = new Vector3(pb.center.x, pb.max.y + 1f, pb.center.z);
+            dropper.transform.position = autoPos;
+            dropper.SetDropCenter(autoPos.x);
+
+            Debug.Log($"[PuzzlePrefabLoader] RepositionDropper: auto-positioned dropper to {autoPos}. " +
+                      $"DropPoint (child) is now at {(dropper.DropPoint != null ? dropper.DropPoint.position.ToString() : "NULL")}");
+        }
+
+        private static Bounds CalculatePrefabBounds(GameObject root)
+        {
+            var cols = root.GetComponentsInChildren<Collider>();
+            bool started = false;
+            Bounds b = default;
+            foreach (var c in cols)
+            {
+                if (!started) { b = c.bounds; started = true; }
+                else b.Encapsulate(c.bounds);
+            }
+            if (!started)
+            {
+                Debug.LogWarning($"[PuzzlePrefabLoader] CalculatePrefabBounds: no colliders found in '{root.name}', using fallback bounds.");
+                b = new Bounds(root.transform.position, Vector3.one * 10f);
+            }
+            return b;
         }
 
         public void ClearPuzzle()
@@ -196,6 +319,7 @@ namespace Vampire.DropPuzzle
             {
                 DestroyImmediate(currentPuzzleInstance);
                 currentPuzzleInstance = null;
+                CurrentPuzzle = null;
             }
             
             if (backgroundInstance != null)

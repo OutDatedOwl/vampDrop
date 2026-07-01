@@ -21,7 +21,8 @@ namespace Vampire.Helpers
         {
             "Grub", "Fizzle", "Sprocket", "Nubs", "Twitch", "Gloop",
             "Skree", "Bonk", "Murgle", "Pip", "Snark", "Widge",
-            "Crud", "Blot", "Fenk", "Zorp", "Gibble", "Runt"
+            "Crud", "Blot", "Fenk", "Zorp", "Gibble", "Runt", "Jacob",
+            "Bradly", "Connor", "Gilligan", "Scooby", "Dooby", "Doo"
         };
 
         [Header("Configuration")]

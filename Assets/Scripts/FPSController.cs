@@ -12,6 +12,11 @@ namespace Vampire.Player
         [Header("Audio")]
         public FPSAudioManager audioManager;
 
+        [Header("Run Particles")]
+        [Tooltip("Transform used to position running particles from the inspector")]
+        public Transform runParticlesOrigin;
+        public ParticleSystem runParticleSystem;
+
         [Header("Movement Settings")]
         public float walkSpeed = 7f;
         public float runSpeed = 12f;
@@ -41,6 +46,19 @@ namespace Vampire.Player
         [Tooltip("Enable detailed ground detection logging")]
         public bool debugGroundDetection = false;
 
+        [Header("Ground Detection State (Debug)")]
+        [Tooltip("Detect")]
+        public bool isGrounded = false;
+
+        [Header("Runtime Debug")]
+        [Tooltip("Shows whether the player pressed jump this frame (read/write at runtime)")]
+        [SerializeField]
+        private bool jumping = false;
+
+        [Tooltip("Shows whether the raycast ground check is true this frame")]
+        [SerializeField]
+        private bool raycastGrounded = false;
+
         // Private variables
         private CharacterController controller;
         private float defaultHeight;
@@ -50,7 +68,7 @@ namespace Vampire.Player
         private float xRotation = 0f;
         private float smoothMouseX = 0f;
         private float smoothMouseY = 0f;
-        private bool isGrounded;
+        //private bool isGrounded = false;
         private float lastJumpTime = -999f; // Track last jump time for cooldown
 
         void Start()
@@ -152,7 +170,7 @@ namespace Vampire.Player
             float moveZ    = Input.GetAxis("Vertical");
             bool  running  = Input.GetKey(KeyCode.LeftShift);
             bool  crouching = Input.GetKey(KeyCode.LeftControl);
-            bool  jumping  = Input.GetKeyDown(KeyCode.Space);
+            jumping = Input.GetKeyDown(KeyCode.Space);
 
             Vector3 move = transform.right * moveX + transform.forward * moveZ;
             if (move.magnitude > 1f) move = move.normalized;
@@ -209,12 +227,41 @@ namespace Vampire.Player
             controller.Move(velocity * Time.deltaTime);
         }
 
+        void UpdateRunParticles(bool shouldEmit)
+        {
+            if (runParticleSystem == null)
+            {
+                return;
+            }
+
+            if (runParticlesOrigin != null)
+            {
+                runParticleSystem.transform.position = runParticlesOrigin.position;
+            }
+
+            if (shouldEmit)
+            {
+                if (!runParticleSystem.isPlaying)
+                {
+                    runParticleSystem.Play();
+                }
+            }
+            else
+            {
+                if (runParticleSystem.isPlaying)
+                {
+                    runParticleSystem.Stop();
+                }
+            }
+        }
+
         void OnDrawGizmosSelected()
         {
             if (controller != null)
             {
-                Vector3 groundCheckPos = transform.position + Vector3.up * groundCheckRadius;
-                Gizmos.color = isGrounded ? Color.green : Color.red;
+                Vector3 bottomCenter = transform.position + controller.center - Vector3.up * (controller.height * 0.5f);
+                Vector3 groundCheckPos = bottomCenter + Vector3.up * groundCheckDistance;
+                Gizmos.color = isGrounded ? Color.blue : Color.red;
                 Gizmos.DrawWireSphere(groundCheckPos, groundCheckRadius);
             }
         }

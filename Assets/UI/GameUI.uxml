@@ -11,14 +11,14 @@
                 <ui:Label name="day-night-timer" text="01:00" class="time-label"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="left-panel" class="left-panel" style="top: 384px; left: 17px; height: 668px; width: 298px;">
+        <ui:VisualElement name="left-panel" class="left-panel" style="top: 384px; left: 17px; height: 668px; width: 330px;">
             <ui:VisualElement class="panel quests-panel">
-                <ui:Label text="QUESTS" class="panel-title" style="font-size: 18px;"/>
-                <ui:Label name="quest-none" text="No active quest" class="quest-none" style="font-size: 20px;"/>
-                <ui:VisualElement class="quest-item">
+                <ui:Label text="QUESTS" class="panel-title" style="font-size: 24px;"/>
+                <ui:Label name="quest-none" text="No active quest" class="quest-none" style="font-size: 22px;"/>
+                <ui:VisualElement class="quest-item" style="font-size: 20px;">
                     <ui:Label name="quest-title" text="" class="quest-title-label"/>
-                    <ui:Label name="quest-description" text="" class="quest-desc"/>
-                    <ui:Label name="quest-progress-text" text="" class="quest-progress"/>
+                    <ui:Label name="quest-description" text="" class="quest-desc" style="font-size: 20px;"/>
+                    <ui:Label name="quest-progress-text" text="" class="quest-progress" style="font-size: 14px;"/>
                     <ui:VisualElement class="quest-bar-bg">
                         <ui:VisualElement name="quest-progress-fill" class="quest-bar-fill"/>
                     </ui:VisualElement>
@@ -36,7 +36,7 @@
                     <ui:Label name="currency-amount" text="$0" class="currency"/>
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement class="panel riceball-panel">
+            <ui:VisualElement name="riceball-panel" class="panel riceball-panel">
                 <ui:Label text="RICE BALLS" class="panel-title"/>
                 <ui:Label name="rice-ball-total" text="0" class="riceball-total"/>
                 <ui:VisualElement class="riceball-grid">

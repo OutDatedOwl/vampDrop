@@ -91,23 +91,15 @@ namespace Vampire.DropPuzzle
 
                 float3 newPosition = physics.ValueRO.Position + physics.ValueRW.Velocity * deltaTime;
 
-                // Infinity/NaN protection — reset silently, no managed call
-                bool isInvalid = math.abs(newPosition.x) > 50f || math.abs(newPosition.y) > 50f ||
-                                 math.isnan(newPosition.x) || math.isnan(newPosition.y) || math.isnan(newPosition.z);
-                if (isInvalid)
+                // NaN protection — reset silently, no managed call
+                if (math.isnan(newPosition.x) || math.isnan(newPosition.y) || math.isnan(newPosition.z))
                 {
                     newPosition = new float3(0, 10, 0);
                     physics.ValueRW.Velocity = float3.zero;
                 }
 
-                if (newPosition.x > 8f) newPosition.x = 8f;
-                if (newPosition.x < -8f) newPosition.x = -8f;
-
-                if (math.any(math.isnan(newPosition)))
-                    newPosition = physics.ValueRO.Position;
-
-                // Sleep balls that fall below kill zone
-                if (newPosition.y < -10f)
+                // Sleep balls that fall below kill zone (large enough for big puzzle layouts)
+                if (newPosition.y < -200f)
                 {
                     physics.ValueRW.Velocity = float3.zero;
                     physics.ValueRW.IsSleeping = true;
@@ -149,7 +141,7 @@ namespace Vampire.DropPuzzle
                 .WithAll<RiceBallTag>()
                 .WithEntityAccess())
             {
-                if (physics.ValueRO.Position.y < -10f)
+                if (physics.ValueRO.Position.y < -200f)
                     ecb.DestroyEntity(entity);
             }
 

@@ -13,6 +13,7 @@ namespace Vampire
         [Header("Scene Names")]
         public string FPSSceneName = "FPS_Collect";
         public string DropPuzzleSceneName = "DropPuzzle";
+        public string BaseSceneName = "Base";
         
         [Header("Transition Settings")]
         [Tooltip("Key to transition to Drop Puzzle from FPS")]
@@ -22,73 +23,69 @@ namespace Vampire
         public static GameSceneManager Instance => instance;
         
         private int collectedRiceCount = 0;
+        private string _currentSceneName = "";
         
         private void Awake()
         {
-            // Persist across scenes
             if (instance == null)
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
-                // Debug.Log("[GameSceneManager] ✅ Created and persisting across scenes");
+                // Always hide/show rice regardless of which code path loads the scene
+                SceneManager.sceneLoaded += OnAnySceneLoaded;
             }
             else
             {
-                // Debug.Log("[GameSceneManager] Duplicate instance found, destroying");
                 Destroy(gameObject);
             }
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnAnySceneLoaded;
+        }
+
+        private void OnAnySceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            _currentSceneName = scene.name;
+            if (scene.name == DropPuzzleSceneName || scene.name == BaseSceneName)
+                SetRiceEntitiesEnabled(false);
+            else if (scene.name == FPSSceneName)
+                SetRiceEntitiesEnabled(true);
+        }
+
+        private void SetRiceEntitiesEnabled(bool enabled)
+        {
+            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+            if (world == null) return;
+            var em = world.EntityManager;
+            var query = em.CreateEntityQuery(new EntityQueryDesc
+            {
+                All     = new[] { ComponentType.ReadOnly<Vampire.Rice.RiceEntity>() },
+                Options = EntityQueryOptions.IncludeDisabledEntities
+            });
+            if (query.IsEmpty) { query.Dispose(); return; }
+            if (enabled)
+                em.RemoveComponent<Disabled>(query);
+            else
+                em.AddComponent<Disabled>(query);
+            query.Dispose();
         }
         
         private float lastLogTime = 0f;
         
         private void Update()
         {
-            // Get current scene once
-            string currentScene = SceneManager.GetActiveScene().name;
-            
-            if (currentScene == FPSSceneName)
-            {
-                if (Input.GetKeyDown(TransitionKey))
-                {
-                    // Debug.Log($"[GameSceneManager] Transitioning from {FPSSceneName} to {DropPuzzleSceneName}...");
-                    TransitionToDropPuzzle();
-                }
-            }
-            else
-            {
-                if (Input.GetKeyDown(TransitionKey))
-                {
-                    // Debug.Log($"[GameSceneManager] Transition key pressed but not in FPS scene. Current: {currentScene}, Expected: {FPSSceneName}");
-                }
-            }
+            if (_currentSceneName == FPSSceneName && Input.GetKeyDown(TransitionKey))
+                TransitionToDropPuzzle();
         }
         
         /// <summary>
         /// Transition from FPS stage to Drop Puzzle
         /// </summary>
-       public void TransitionToDropPuzzle()
+        public void TransitionToDropPuzzle()
         {
-            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
-            if (world != null)
-            {
-                var entityManager = world.EntityManager;
-
-                // Use the full path to the TAG struct defined in RiceSpawnComponents.cs
-                // This avoids the "Vampire.Rice is a namespace" conflict
-                var riceQuery = entityManager.CreateEntityQuery(new EntityQueryDesc
-                {
-                    All = new [] { ComponentType.ReadOnly<Vampire.Rice.RiceSpawned>() }, 
-                    Options = EntityQueryOptions.IncludeDisabledEntities 
-                });
-
-                if (!riceQuery.IsEmpty)
-                {
-                    // Adding the Disabled component hides them from rendering and physics systems
-                    entityManager.AddComponent<Unity.Entities.Disabled>(riceQuery);
-                    // Debug.Log($"[GameSceneManager] 🧊 {riceQuery.CalculateEntityCount()} rice entities hibernated.");
-                }
-            }
-
+            // Rice hiding is handled by OnAnySceneLoaded — no manual entity work needed here
             SceneManager.sceneLoaded += OnDropPuzzleSceneLoaded;
             SceneManager.LoadScene(DropPuzzleSceneName);
         }
@@ -115,27 +112,8 @@ namespace Vampire
         /// </summary>
         public void ReturnToFPS()
         {
-            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
-            if (world != null)
-            {
-                var entityManager = world.EntityManager;
-                
-                var riceQuery = entityManager.CreateEntityQuery(new EntityQueryDesc
-                {
-                    All = new [] { ComponentType.ReadOnly<Vampire.Rice.RiceSpawned>() }, 
-                    Options = EntityQueryOptions.IncludeDisabledEntities 
-                });
-                // SHOW: Remove the Disabled tag
-                 if (!riceQuery.IsEmpty)
-                {
-                    // Adding the Disabled component hides them from rendering and physics systems
-                     entityManager.RemoveComponent<Unity.Entities.Disabled>(riceQuery);
-                }
-                
-                // Debug.Log("[GameSceneManager] ✨ Rice entities restored.");
-            }
+            // Rice showing is handled by OnAnySceneLoaded
             SceneManager.LoadScene(FPSSceneName);
-            // Debug.Log("[GameSceneManager] Returning to FPS stage");
         }
     }
 }

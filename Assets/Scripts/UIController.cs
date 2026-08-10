@@ -49,6 +49,7 @@ public class UIController : MonoBehaviour
     private Label _riceCount;
 
     // Rice balls
+    private VisualElement _riceBallPanel;
     private Label _riceBallTotal;
     private Label _riceBallFine;
     private Label _riceBallGood;
@@ -77,6 +78,8 @@ public class UIController : MonoBehaviour
     private int  _lastMaxHelpers    = -1;
     private string _lastQuestId     = null;
     private int  _lastQuestValue    = -1;
+    private int  _lastTotal         = -1;
+    private int  _lastRiceBallsCrafted = -1;
 
     // tracks whether we've subscribed to QuestManager events yet
     private bool _questManagerSubscribed = false;
@@ -113,6 +116,7 @@ public class UIController : MonoBehaviour
         _riceCount = Bind<Label>(root, "rice-count");
 
         // Rice balls
+        _riceBallPanel     = Bind<VisualElement>(root, "riceball-panel");
         _riceBallTotal     = Bind<Label>(root, "rice-ball-total");
         _riceBallFine      = Bind<Label>(root, "rice-ball-fine");
         _riceBallGood      = Bind<Label>(root, "rice-ball-good");
@@ -280,6 +284,15 @@ public class UIController : MonoBehaviour
             if (_riceCount != null) _riceCount.text = _lastRice.ToString();
         }
 
+        // Riceball panel hidden until the player has crafted at least once
+        int crafted = pd.TotalRiceBallsCrafted;
+        if (crafted != _lastRiceBallsCrafted)
+        {
+            _lastRiceBallsCrafted = crafted;
+            if (_riceBallPanel != null)
+                _riceBallPanel.style.display = crafted > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
         var inv = pd.Inventory;
 
         if (inv.FineBalls != _lastFine)
@@ -304,9 +317,11 @@ public class UIController : MonoBehaviour
         }
 
         int total = inv.GetTotalBalls();
-        // Reuse _lastFine dirty-check isn't quite right for total — track separately via sum
-        if (_riceBallTotal != null)
-            _riceBallTotal.text = total.ToString();
+        if (total != _lastTotal)
+        {
+            _lastTotal = total;
+            if (_riceBallTotal != null) _riceBallTotal.text = total.ToString();
+        }
 
         if (pd.TotalCurrency != _lastCurrency)
         {
@@ -422,7 +437,7 @@ public class UIController : MonoBehaviour
         _lastPhase       = (DayNightCycleManager.TimeOfDay)(-1);
         _lastTimerSecond = -1;
         _lastRice = _lastFine = _lastGood = _lastGreat = _lastExcellent = -1;
-        _lastCurrency = _lastDeployed = _lastMaxHelpers = -1;
+        _lastCurrency = _lastDeployed = _lastMaxHelpers = _lastRiceBallsCrafted = -1;
 
         UpdateDayNight();
         UpdatePlayerData();

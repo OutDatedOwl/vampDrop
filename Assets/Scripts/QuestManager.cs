@@ -32,6 +32,8 @@ namespace Vampire.DropPuzzle
             VisitBallDrop,
             DropRiceBalls,
             CollectCurrency,
+            TalkToSnerd,
+            GoToBase,
             Custom
         }
         

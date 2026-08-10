@@ -33,9 +33,13 @@ namespace Vampire.DropPuzzle
         public float DropInterval = 0.25f; // Slower spawn to prevent stacking
         public bool useInventorySystem = true; // Use crafted riceballs from inventory
         
+        /// <summary>Fired when the player commits to dropping (camera listens to zoom out).</summary>
+        public static event System.Action OnAnyDropStarted;
+
         private float moveDirection = 1f;
         private bool isDropping = false;
         private bool hasDropped = false;
+        private float _dropCenterX = 0f;
 
         // ── OnGUI cache — allocated once, not every frame ─────────────────
         private GUIStyle _guiStyle;
@@ -51,15 +55,19 @@ namespace Vampire.DropPuzzle
         private BallDropCompletionManager completionManager;
         private BallDropAudioManager audioManager;
         
+        /// <summary>
+        /// Called by PuzzlePrefabLoader after repositioning so the oscillation range
+        /// is centred on the puzzle, not on world X=0.
+        /// </summary>
+        public void SetDropCenter(float x) => _dropCenterX = x;
+
         private void Start()
         {
             // CRITICAL: Force useInventorySystem=true for tutorial/proper gameplay
             useInventorySystem = true;
-            
-            if (DropPoint == null)
-            {
-                DropPoint = transform;
-            }
+
+            _dropCenterX = transform.position.x;
+            DropPoint = transform; // always self — PuzzlePrefabLoader repositions transform, not DropPoint
             
             // Get EntityManager
             entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
@@ -91,12 +99,15 @@ namespace Vampire.DropPuzzle
                 MoveDropper();
             }
             
-            // Check for drop input
-            if (Input.GetKeyDown(KeyCode.Space) && !hasDropped)
+            // Check for drop input — camera controller gates this during assessment
+            if (Input.GetKeyDown(KeyCode.Space) && !hasDropped
+                && DropPuzzleCameraController.AllowDrop)
             {
                 // Set flag immediately to prevent re-triggering
                 hasDropped = true;
-                
+
+                OnAnyDropStarted?.Invoke();
+
                 // Notify audio manager
                 if (audioManager != null)
                 {
@@ -124,18 +135,12 @@ namespace Vampire.DropPuzzle
         private void MoveDropper()
         {
             float newX = transform.position.x + (moveDirection * MoveSpeed * Time.deltaTime);
-            
-            if (newX > MoveRange)
-            {
-                newX = MoveRange;
-                moveDirection = -1f;
-            }
-            else if (newX < -MoveRange)
-            {
-                newX = -MoveRange;
-                moveDirection = 1f;
-            }
-            
+            float lo = _dropCenterX - MoveRange;
+            float hi = _dropCenterX + MoveRange;
+
+            if (newX > hi) { newX = hi; moveDirection = -1f; }
+            else if (newX < lo) { newX = lo; moveDirection =  1f; }
+
             transform.position = new Vector3(newX, transform.position.y, transform.position.z);
         }
         
@@ -198,8 +203,8 @@ namespace Vampire.DropPuzzle
             var spawnedEntities = new Unity.Collections.NativeArray<Entity>(ballsToDrop, Unity.Collections.Allocator.Temp);
             entityManager.CreateEntity(ballArchetype, spawnedEntities);
 
-            // Park all entities off-screen while we wait to activate them
-            float3 parkedPos = new float3(0f, 100f, 0f);
+            // Park all entities off-screen while we wait to activate them (match puzzle Z so no warp on activation)
+            float3 parkedPos = new float3(0f, 100f, DropPoint.position.z);
             for (int i = 0; i < ballsToDrop; i++)
             {
                 entityManager.SetComponentData(spawnedEntities[i], new LocalTransform
@@ -241,7 +246,7 @@ namespace Vampire.DropPuzzle
                 float3 spawnPos = new float3(
                     DropPoint.position.x + randomX,
                     DropPoint.position.y - 0.3f + randomY,
-                    0f
+                    DropPoint.position.z
                 );
 
                 entityManager.SetComponentData(entityList[i], new LocalTransform
@@ -293,11 +298,10 @@ namespace Vampire.DropPuzzle
             float randomX = UnityEngine.Random.Range(-BallRadius * 3f, BallRadius * 3f);
             float randomY = UnityEngine.Random.Range(0f, BallRadius * 0.5f);
             
-            // CRITICAL: Force Z=0 to match wall positions (walls are at Z=0 in GridPuzzleLoader)
             float3 spawnPos = new float3(
                 DropPoint.position.x + randomX,
                 DropPoint.position.y - 0.3f + randomY,
-                0f  // ← Must be 0 to match walls!
+                DropPoint.position.z
             );
             
             // Create ECS entity using pre-built archetype (avoids archetype lookup)

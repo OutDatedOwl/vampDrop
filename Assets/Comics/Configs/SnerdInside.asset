@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44657ea10175d8446a57b45c69e05c00, type: 3}
+  m_Name: SnerdInside
+  m_EditorClassIdentifier: Assembly-CSharp::Vampire.ComicSequenceConfig
+  sequenceId: new_sequence
+  sequenceName: New Comic Sequence
+  panels:
+  - background: {fileID: 21300000, guid: e22bb01486d5da0478110597cda94e00, type: 3}
+    character: {fileID: 0}
+    characterSide: 0
+    dialogueText: 
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: e22bb01486d5da0478110597cda94e00, type: 3}
+    character: {fileID: 21300000, guid: 9e042a0d822c16f4abda5fb0c301dcba, type: 3}
+    characterSide: 0
+    dialogueText: Master! I've setup basecamp
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: e22bb01486d5da0478110597cda94e00, type: 3}
+    character: {fileID: 21300000, guid: dc11c5d2a9e05724bac51fbe6210110f, type: 3}
+    characterSide: 0
+    dialogueText: Good Job, Snerd! Now what to do with all this rice
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: e22bb01486d5da0478110597cda94e00, type: 3}
+    character: {fileID: 21300000, guid: 9e042a0d822c16f4abda5fb0c301dcba, type: 3}
+    characterSide: 0
+    dialogueText: I can help! I can turn your RICE into RICEBALLS
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  - background: {fileID: 21300000, guid: e22bb01486d5da0478110597cda94e00, type: 3}
+    character: {fileID: 21300000, guid: 9e042a0d822c16f4abda5fb0c301dcba, type: 3}
+    characterSide: 0
+    dialogueText: Once we have 5 riceballs we should have enough for our next steps
+    autoDuration: 0
+    sfx: {fileID: 0}
+    music: {fileID: 0}
+    musicVolume: 0
+  nextSceneName: Base
+  sequenceMusic: {fileID: 0}
+  musicVolume: 0.5

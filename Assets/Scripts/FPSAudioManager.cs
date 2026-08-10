@@ -79,6 +79,17 @@ namespace Vampire.Player
         [Tooltip("Only check directly below player (not around)")]
         public bool onlyCheckDirectlyBelow = true;
         
+        [Header("Footstep Fade")]
+        [Tooltip("Seconds to fade footsteps in when starting to walk")]
+        [Range(0.05f, 1f)]
+        public float footstepFadeInTime  = 0.1f;
+        [Tooltip("Seconds to fade footsteps out when stopping")]
+        [Range(0.05f, 1f)]
+        public float footstepFadeOutTime = 0.2f;
+        [Tooltip("How long you must hold W before footsteps reach full volume. Short taps stay quiet.")]
+        [Range(0.1f, 2f)]
+        public float walkFullVolumeTime = 0.75f;
+
         [Header("Performance Settings")]
         [Tooltip("Enable performance profiling logs")]
         public bool enablePerformanceProfiling = true;
@@ -93,7 +104,7 @@ namespace Vampire.Player
         public bool forceGroundAudio = false;
         [Tooltip("Volume multiplier for regular ground walking (since it's very low)")]
         [Range(0f, 3f)]
-        public float groundWalkingVolumeBoost = 2.0f;
+        public float groundWalkingVolumeBoost = 1.0f;
         
         [Tooltip("Volume multiplier for rice walking (since it's a little loud)")]
         [Range(0f, 3f)]
@@ -109,9 +120,17 @@ namespace Vampire.Player
         private float lastMusicVolume;
         private float lastFootstepVolume;
         private float lastSFXVolume;
+
+        // Footstep fade state
+        private float _currentFootstepVolume = 0f;
+        private float _targetFootstepVolume  = 0f;
+        private float _walkingTargetVolume   = 0f;
+        private float _walkHoldTime          = 0f; // accumulates while W held; drives volume ramp
         
         // Performance optimization
         private int lastRiceCheckFrame = 0;
+        private Unity.Entities.EntityQuery _riceQuery;
+        private bool _riceQueryCreated = false;
         
         // Singleton instance for easy access
         public static FPSAudioManager Instance { get; private set; }
@@ -185,17 +204,42 @@ namespace Vampire.Player
         private void OnDestroy()
         {
             if (Instance == this)
-            {
                 Instance = null;
-            }
+
+            if (_riceQueryCreated)
+                _riceQuery.Dispose();
         }
         
         private void Update()
         {
-            // Check for volume changes and update audio sources
             if (HasVolumeChanged())
-            {
                 UpdateAudioVolumes();
+
+            // Accumulate hold time while walking; reset when stopped
+            if (isCurrentlyWalking)
+            {
+                _walkHoldTime = Mathf.Min(_walkHoldTime + Time.deltaTime, walkFullVolumeTime);
+                // SmoothStep gives a natural ease-in curve: quiet at first, full volume after walkFullVolumeTime
+                float holdScale = Mathf.SmoothStep(0f, 1f, _walkHoldTime / Mathf.Max(walkFullVolumeTime, 0.01f));
+                _targetFootstepVolume = _walkingTargetVolume * holdScale;
+            }
+            // else _targetFootstepVolume stays 0 (set by StopWalkingSound)
+
+            // Smooth footstep volume fade toward current target
+            if (footstepSource != null)
+            {
+                float fadeRate = _targetFootstepVolume >= _currentFootstepVolume
+                    ? Time.deltaTime / Mathf.Max(footstepFadeInTime,  0.01f)
+                    : Time.deltaTime / Mathf.Max(footstepFadeOutTime, 0.01f);
+
+                _currentFootstepVolume = Mathf.MoveTowards(
+                    _currentFootstepVolume, _targetFootstepVolume, fadeRate);
+
+                if (footstepSource.isPlaying)
+                    footstepSource.volume = _currentFootstepVolume;
+
+                if (_currentFootstepVolume <= 0f && _targetFootstepVolume <= 0f && footstepSource.isPlaying)
+                    footstepSource.Stop();
             }
         }
         
@@ -222,17 +266,10 @@ namespace Vampire.Player
             
             if (footstepSource != null)
             {
-                // For walking sounds, apply surface-specific volume adjustments
-                float baseVolume = footstepVolume * masterVolume;
-                if (footstepSource.isPlaying && isCurrentlyWalking)
-                {
-                    float volumeMultiplier = isWalkingOnRice ? riceWalkingVolumeBoost : groundWalkingVolumeBoost;
-                    footstepSource.volume = baseVolume * volumeMultiplier;
-                }
-                else
-                {
-                    footstepSource.volume = baseVolume;
-                }
+                // Recalculate max volume — Update() applies hold-time scaling on top of this
+                float volumeMultiplier = isWalkingOnRice ? riceWalkingVolumeBoost : groundWalkingVolumeBoost;
+                _walkingTargetVolume = footstepVolume * sfxVolume * masterVolume * volumeMultiplier;
+                // Do NOT set _targetFootstepVolume here — Update() drives it via hold-time scaling
             }
             
             if (sfxSource != null)
@@ -366,57 +403,28 @@ namespace Vampire.Player
         /// </summary>
         private void StartWalkingSound()
         {
-            
-            if (footstepSource == null) 
-            {
-                return;
-            }
-            
-            // Determine which sound to play
-            AudioClip soundToPlay = isWalkingOnRice ? walkingOnRiceSound : walkingSound;
+            if (footstepSource == null) return;
 
-            if (soundToPlay == null) 
+            AudioClip soundToPlay = isWalkingOnRice ? walkingOnRiceSound : walkingSound;
+            if (soundToPlay == null) return;
+
+            // Update the max volume ceiling — Update() scales this by hold time each frame
+            float volumeMultiplier = isWalkingOnRice ? riceWalkingVolumeBoost : groundWalkingVolumeBoost;
+            _walkingTargetVolume = footstepVolume * sfxVolume * masterVolume * volumeMultiplier;
+
+            if (footstepSource.clip != soundToPlay || !footstepSource.isPlaying)
             {
-                return;
-            }
-            
-            // If we're not already playing the correct sound, switch to it
-            bool needsToStart = footstepSource.clip != soundToPlay || !footstepSource.isPlaying;
-  
-            if (needsToStart)
-            {
-                footstepSource.clip = soundToPlay;
-                footstepSource.loop = true;
-                
-                // Apply volume adjustment based on surface type
-                float volumeMultiplier = isWalkingOnRice ? riceWalkingVolumeBoost : groundWalkingVolumeBoost;
-                float finalVolume = (footstepVolume * masterVolume) * volumeMultiplier;
-                footstepSource.volume = finalVolume;           
+                footstepSource.clip   = soundToPlay;
+                footstepSource.loop   = true;
+                footstepSource.volume = _currentFootstepVolume;
                 footstepSource.Play();
-                
-            }
-            else
-            {
-                // Debug.Log($"[FPSAudioManager] Walking sound already playing correctly: {soundToPlay.name}");
             }
         }
-        
-        /// <summary>
-        /// Stop walking sound
-        /// </summary>
+
         private void StopWalkingSound()
         {
-            // Only log if there's actually a change to avoid spam
-            bool wasPlaying = footstepSource != null && footstepSource.isPlaying;
-            
-            if (footstepSource != null && footstepSource.isPlaying)
-            {
-                footstepSource.Stop();
-            }
-            else if (wasPlaying)
-            {
-                // Debug.Log("[FPSAudioManager] Walking sound was already stopped");
-            }
+            _targetFootstepVolume = 0f;
+            _walkHoldTime         = 0f; // reset so the next tap starts from quiet again
         }
         
         /// <summary>
@@ -560,44 +568,36 @@ namespace Vampire.Player
         /// </summary>
         private int CountECSRiceNearPlayer(EntityManager entityManager, Vector3 playerPosition)
         {
+            // Build query once and reuse — CreateEntityQuery every call was a sync point
+            if (!_riceQueryCreated)
+            {
+                _riceQuery = entityManager.CreateEntityQuery(
+                    Unity.Entities.ComponentType.ReadOnly<LocalTransform>(),
+                    Unity.Entities.ComponentType.ReadOnly<Vampire.Rice.RiceEntity>()
+                );
+                _riceQueryCreated = true;
+            }
+
+            if (_riceQuery.IsEmpty) return 0;
+
             int count = 0;
             float radiusSquared = riceDetectionRadius * riceDetectionRadius;
             float3 playerPos = new float3(playerPosition.x, playerPosition.y, playerPosition.z);
-            
-            // Query for actual ground rice entities (not collected/hidden rice)
-            var query = entityManager.CreateEntityQuery(
-                Unity.Entities.ComponentType.ReadOnly<LocalTransform>(),
-                Unity.Entities.ComponentType.ReadOnly<Vampire.Rice.RiceEntity>()
-            );
-            
-            // Early exit if no rice entities
-            if (query.IsEmpty)
-            {
-                query.Dispose();
-                return 0;
-            }
-            
-            var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
-            var transforms = query.ToComponentDataArray<LocalTransform>(Unity.Collections.Allocator.Temp);
-            
-            // Limit how many entities we check for performance
-            int maxEntitiesToCheck = math.min(entities.Length, 2000); // Increased to 2000 for better detection
-            
+
+            var transforms = _riceQuery.ToComponentDataArray<LocalTransform>(Unity.Collections.Allocator.Temp);
+
+            int maxEntitiesToCheck = math.min(transforms.Length, 2000);
             for (int i = 0; i < maxEntitiesToCheck; i++)
             {
                 float3 ricePos = transforms[i].Position;
                 float distanceSquared = math.distancesq(playerPos, ricePos);
-                
+
                 if (distanceSquared <= radiusSquared)
                 {
-                    // Additional height check if only checking directly below
                     if (onlyCheckDirectlyBelow)
                     {
-                        float heightDifference = math.abs(ricePos.y - playerPos.y);
-                        if (heightDifference <= 0.5f) // Within reasonable height range
-                        {
+                        if (math.abs(ricePos.y - playerPos.y) <= 0.5f)
                             count++;
-                        }
                     }
                     else
                     {
@@ -605,11 +605,8 @@ namespace Vampire.Player
                     }
                 }
             }
-            
-            entities.Dispose();
+
             transforms.Dispose();
-            query.Dispose();
-            
             return count;
         }
         

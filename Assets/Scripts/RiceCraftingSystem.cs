@@ -19,9 +19,13 @@ namespace Vampire.DropPuzzle
         public float baseTimePerBall = 0.3f; // Seconds per riceball
         public bool autoShowResults = true;
         
-        [Header("Audio (Optional)")]
+        [Header("Audio")]
+        [Tooltip("Looping sound while crafting is in progress (crafting.mp3)")]
         public AudioClip craftingSound;
-        public AudioClip qualityRollSound;
+        [Tooltip("One-shot chime when all balls are done (complete.wav)")]
+        public AudioClip completionSound;
+
+        private AudioSource _audioSource;
 
         [Header("UI")]
         [Tooltip("Uncheck to hide the legacy OnGUI crafting panel (use when UIController HUD is active)")]
@@ -39,25 +43,18 @@ namespace Vampire.DropPuzzle
             else
             {
                 Destroy(gameObject);
+                return;
             }
+
+            _audioSource = gameObject.AddComponent<AudioSource>();
+            _audioSource.playOnAwake  = false;
+            _audioSource.spatialBlend = 0f; // 2D — player's own action
+            _audioSource.loop         = false;
         }
         
         private void Update()
         {
-            if (playerData == null) return;
-            
-            // Press E to craft
-            if (Input.GetKeyDown(craftKey) && !isCrafting)
-            {
-                if (playerData.RiceGrains >= 5)
-                {
-                    StartCoroutine(CraftRiceBallsCoroutine());
-                }
-                else
-                {
-                    Debug.LogWarning($"[Crafting] Not enough rice! Have {playerData.RiceGrains}, need 5");
-                }
-            }
+            // E-key crafting removed — crafting now only available at Snerd in Base scene
         }
         
         /// <summary>
@@ -81,17 +78,19 @@ namespace Vampire.DropPuzzle
             // Do the actual crafting
             lastCraftedCount = playerData.ConvertRiceToRiceBalls();
             
+            // Start looping crafting sound for the whole crafting duration
+            if (craftingSound != null && _audioSource != null)
+            {
+                _audioSource.clip   = craftingSound;
+                _audioSource.loop   = true;
+                _audioSource.volume = SFXVolume();
+                _audioSource.Play();
+            }
+
             // Animate the crafting process
             for (int i = 0; i < lastCraftedCount; i++)
             {
                 Debug.Log($"[Crafting] Crafting ball {i + 1}/{lastCraftedCount}...");
-                
-                // TODO: Play animation, particle effects, etc.
-                if (craftingSound != null)
-                {
-                    // AudioSource.PlayClipAtPoint(craftingSound, Camera.main.transform.position);
-                }
-                
                 yield return new WaitForSeconds(timePerBall);
             }
             
@@ -103,7 +102,19 @@ namespace Vampire.DropPuzzle
             
             Debug.Log($"[Crafting] ✅ Complete! Crafted: {craftedFine} Fine, {craftedGood} Good, {craftedGreat} Great, {craftedExcellent} Excellent");
             Debug.Log($"[Crafting] Total inventory: {playerData.Inventory.GetTotalBalls()} balls (Value: {playerData.Inventory.GetTotalValue()}x)");
-            
+
+            // Stop crafting loop and play completion chime
+            if (_audioSource != null)
+            {
+                _audioSource.Stop();
+                _audioSource.loop = false;
+                if (completionSound != null)
+                {
+                    _audioSource.volume = SFXVolume();
+                    _audioSource.PlayOneShot(completionSound);
+                }
+            }
+
             // Notify tutorial manager
             if (DropPuzzle.TutorialManager.Instance != null)
             {
@@ -145,6 +156,12 @@ namespace Vampire.DropPuzzle
         public int GetCraftableCount()
         {
             return playerData != null ? playerData.RiceGrains / 5 : 0;
+        }
+
+        private float SFXVolume()
+        {
+            var a = Player.FPSAudioManager.Instance;
+            return a != null ? a.sfxVolume * a.masterVolume : 1f;
         }
         
         private void OnGUI()

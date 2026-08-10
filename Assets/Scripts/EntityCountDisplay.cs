@@ -28,55 +28,58 @@ namespace Vampire
     /// </summary>
     public class EntityCountDisplay : MonoBehaviour
     {
-        private GUIStyle style;
+        private GUIStyle _style;
+        private EntityQuery _riceQuery;
+        private EntityQuery _playerQuery;
+        private bool _queriesCreated;
+
+        private void Start()
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null) return;
+            _riceQuery = world.EntityManager.CreateEntityQuery(
+                Unity.Entities.ComponentType.ReadOnly<Rice.RiceEntity>(),
+                Unity.Entities.ComponentType.Exclude<Rice.RiceHidden>());
+            _playerQuery = world.EntityManager.CreateEntityQuery(typeof(Player.PlayerData));
+            _queriesCreated = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (_queriesCreated)
+            {
+                _riceQuery.Dispose();
+                _playerQuery.Dispose();
+            }
+        }
 
         void OnGUI()
         {
-            if (style == null)
+            if (!_queriesCreated) return;
+
+            if (_style == null)
             {
-                style = new GUIStyle(GUI.skin.label);
-                style.fontSize = 24;
-                style.normal.textColor = Color.white;
-                style.alignment = TextAnchor.UpperLeft;
+                _style = new GUIStyle(GUI.skin.label);
+                _style.fontSize = 24;
+                _style.normal.textColor = Color.white;
+                _style.alignment = TextAnchor.UpperLeft;
             }
 
+            int riceCount = _riceQuery.CalculateEntityCount();
+
+            int collectedCount = 0;
+            int playerCount = _playerQuery.CalculateEntityCount();
             var world = World.DefaultGameObjectInjectionWorld;
-            if (world != null)
+            if (world != null && playerCount >= 1)
             {
-                // Only count visible rice (exclude hidden)
-                var riceQuery = world.EntityManager.CreateEntityQuery(
-                    Unity.Entities.ComponentType.ReadOnly<Rice.RiceEntity>(),
-                    Unity.Entities.ComponentType.Exclude<Rice.RiceHidden>());
-                var riceCount = riceQuery.CalculateEntityCount();
-                riceQuery.Dispose();
-
-                var playerQuery = world.EntityManager.CreateEntityQuery(typeof(Player.PlayerData));
-                var playerCount = playerQuery.CalculateEntityCount();
-                var collectedCount = 0;
-                
-                // Only get singleton if EXACTLY 1 player exists
-                if (playerCount == 1)
-                {
-                    var playerEntity = playerQuery.GetSingletonEntity();
-                    var playerData = world.EntityManager.GetComponentData<Player.PlayerData>(playerEntity);
-                    collectedCount = playerData.RiceCollected;
-                }
-                else if (playerCount > 1)
-                {
-                    // Multiple players during scene transition - use first available
-                    var players = playerQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
-                    if (players.Length > 0 && world.EntityManager.Exists(players[0]))
-                    {
-                        var playerData = world.EntityManager.GetComponentData<Player.PlayerData>(players[0]);
-                        collectedCount = playerData.RiceCollected;
-                    }
-                    players.Dispose();
-                }
-                playerQuery.Dispose();
-
-                GUI.Label(new Rect(10, 10, 500, 30), $"Rice in World: {riceCount}", style);
-                GUI.Label(new Rect(10, 40, 500, 30), $"Rice Collected: {collectedCount}", style);
+                var players = _playerQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+                if (players.Length > 0 && world.EntityManager.Exists(players[0]))
+                    collectedCount = world.EntityManager.GetComponentData<Player.PlayerData>(players[0]).RiceCollected;
+                players.Dispose();
             }
+
+            GUI.Label(new Rect(10, 10, 500, 30), $"Rice in World: {riceCount}", _style);
+            GUI.Label(new Rect(10, 40, 500, 30), $"Rice Collected: {collectedCount}", _style);
         }
     }
 }
